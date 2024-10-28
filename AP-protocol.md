@@ -59,7 +59,7 @@ The consequence is that drones do not need to maintain routing tables.
 
 As an example, consider the following simplified network:
 
-![constellation.svg](https://prod-files-secure.s3.us-west-2.amazonaws.com/24a15b0a-9ea1-4076-a4f5-c48d76f5e682/0f3ffc1f-ba92-47a4-9b98-3df072f41c1c/constellation.svg)
+![constellation](costellation.png)
 
 Suppose that the client A wants to send a message to the server D.
 
