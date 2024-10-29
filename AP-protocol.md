@@ -10,15 +10,15 @@ The **Network Initializer** reads a local **Network Initialization File** that e
 
 The Network Initialization File has the following format:
 
-- 10 done lines: `drone_id CDN connected_drone_ids PDR`.
+- 10 drone lines: `drone_id connected_drone_count connected_drone_ids packet_drop_rate`.
 
-    Consider this example line: `d1 3 d3 d4 d5 0.05`. It means that drone `d1` is connected with 3 drones `d3`, `d4` and `d5`, and that its Packet Drop Probability is 0.05.
+    Consider this example line: `d1 3 d3 d4 d5 0.05`. It means that drone `d1` is connected with 3 drones `d3`, `d4` and `d5`, and that its Packet Drop Rate is 0.05 .
 
     Note that the PDR is defined between 0 and 1 (0.05 = 5%).
 
     Note that `connected_drone_ids` cannot contain `drone_id` nor repetitions.
 
-- 2 client lines: `client_id CDN connected_drone_ids`.
+- 2 client lines: `client_id connected_drone_count connected_drone_ids`.
 
     Consider this example line: `c1 2 d2 d3`. It means that client `c1` is connected with 2 drones `d2` and `d3`.
 
@@ -26,7 +26,7 @@ The Network Initialization File has the following format:
 
     Note that a client cannot connect to other clients or servers.
 
-- 2 server lines: `server_id CDN connected_drone_ids`.
+- 2 server lines: `server_id connected_drone_count connected_drone_ids`.
 
     Consider this example line: `s1 2 d4 d5`. It means that server `s1` is connected with 2 drones `d4` and `d5`.
 
@@ -34,14 +34,13 @@ The Network Initialization File has the following format:
 
     Note that a server cannot connect to other clients or servers.
 
-
 Importantly, the Network Initializer should also setup the Rust channels between the nodes and the Simulation Controller (see the Simulation Controller section).
 
-# Drone parameters: Packet Drop Probability
+# Drone parameters: Packet Drop Rate
 
 A drone is characterized by a parameter that regulates what to do when a packet is received, that thus influences the simulation. This parameter is provided in the Network Initialization File.
 
-Packet Drop Probability: The drone drops the received packet with probability equal to the Packet Drop Probability.
+Packet Drop Rate: The drone drops the received packet with probability equal to the Packet Drop Rate.
 
 # Messages and fragments
 
@@ -90,9 +89,9 @@ struct SourceRoutingHeader {
 
 When the network is first initialized, nodes only know who their own neighbours are.
 
-Client and servers need to obtain an understanding of the network topology (”what nodes are there in the network and what are their types?”) so that they can compute a route that packets take through the network (refer to the Source routing section for details).
+Clients and servers need to obtain an understanding of the network topology (”what nodes are there in the network and what are their types?”) so that they can compute a route that packets take through the network (refer to the Source routing section for details).
 
-To do so, they must use the **Network Discovery Protocol**. The Network Discovery Protocol can be thus is initiated by clients and servers and works through query flooding.
+To do so, they must use the **Network Discovery Protocol**. The Network Discovery Protocol is initiated by clients and servers and works through query flooding.
 
 ### **Flooding Initialization**
 
@@ -255,7 +254,7 @@ enum MediaResponse{
 
 If a drone receives a Message and the next hop specified in the Source Routing Header is not a neighbor of the drone, then it sends Error to the client.
 
-This message cannot be dropped by drones due to Packet Drop Probability.
+This message cannot be dropped by drones due to Packet Drop Rate.
 
 ```rust
 struct Error {
@@ -270,9 +269,9 @@ Source Routing Header contains the path to the client, which can be obtained by 
 
 ### Dropped
 
-If a drone receives a Message that must be dropped due to the Packet Drop Probability, then it sends Dropped twice to the client.
+If a drone receives a Message that must be dropped due to the Packet Drop Rate, then it sends Dropped twice to the client.
 
-This message cannot be dropped by drones due to Packet Drop Probability.
+This message cannot be dropped by drones due to Packet Drop Rate.
 
 ```rust
 struct Dropped {
@@ -364,7 +363,7 @@ It would then copy `file_size` elements of the `file` array at the correct offse
 
 Note that, if there are more than one fragment, `file_size` is 20 for all fragments except for the last, as the arrays carry as much data as possible.
 
-If the client or server has already received a fragment with the same `session_id`, then it just needs to copy the data of the fragment in the vector.
+If the client or server has already received a fragment with the same `session_id`, then it just need copy the data of the fragment in the vector.
 
 Once that the client or server has received all fragments (that is, `fragment_index` 0 to `total_n_fragments` -2), then it has reassembled the whole fragment.
 
