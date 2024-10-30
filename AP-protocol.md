@@ -363,7 +363,7 @@ It would then copy `file_size` elements of the `file` array at the correct offse
 
 Note that, if there are more than one fragment, `file_size` is 20 for all fragments except for the last, as the arrays carry as much data as possible.
 
-If the client or server has already received a fragment with the same `session_id`, then it just need copy the data of the fragment in the vector.
+If the client or server has already received a fragment with the same `session_id`, then it just needs to copy the data of the fragment in the vector.
 
 Once that the client or server has received all fragments (that is, `fragment_index` 0 to `total_n_fragments` -2), then it has reassembled the whole fragment.
 
