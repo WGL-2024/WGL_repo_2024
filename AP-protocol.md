@@ -105,7 +105,7 @@ struct Query {
 	/// ID of client or server
 	initiator_id: RC<Arc<usize>>,
 	/// Time To Live, decremented at each hop to limit the query's lifespan.
-	ttl: u64,
+	ttl: u8,
 	/// Records the nodes that have been traversed (to track the connections).
 	path_trace: [u64; 20]
 	node_types: [NodeType; ]
@@ -262,7 +262,7 @@ struct Error {
 	session_id: u64,
 	/// ID of drone, server of client that is not a neighbor:
 	id_not_neighbor: String,
-	ttl: u32,
+	ttl: u8,
 }
 ```
 
@@ -287,9 +287,7 @@ Source Routing Header contains the path to the client, which can be obtained by 
 If a drone receives a Message and can forward it to the next hop, it also sends an Ack to the client.
 
 ```rust
-pub struct Ack(AckInner);
-
-struct AckInner {
+struct Ack {
 	session_id: u64,
 	when: std::time::Instant,
 	// Time at which the message was received.
@@ -333,7 +331,7 @@ struct FragmentData{
 	length: u8 // assembler will fragment/defragment data into bytes.
 }
 
-pub struct FragmentHeader {
+struct FragmentHeader {
 	/// Identifies the session to which this fragment belongs.
 	session_id: u64,
 	/// Total number of fragments, must be equal or greater than 1.
