@@ -62,26 +62,20 @@ As an example, consider the following simplified network:
 
 Suppose that the client A wants to send a message to the server D.
 
-It computes the route B→E→F→D, creates a **Source Routing Header** specifying route B→E→F→D with n_hops=5 and hop_index=0, adds it to the packet and sends it to B.
+It computes the route B→E→F→D, creates a **Source Routing Header** specifying route A→B→E→F→D, adds it to the packet and sends it to B.
 
-When B receives the packet, it sees that the next hop is E, increments hop_index by 1 and sends the packet to it.
+When B receives the packet, it sees that the next hop is E and sends the packet to it.
 
-When F receives the packet, it sees that the next hop is F, increments hop_index by 1 and sends the packet to it.
+When E receives the packet, it sees that the next hop is F and sends the packet to it.
 
-When D receives the packet, it sees there are no more hops (as hop_index is equal to n_hops - 1) so it must be the final destination: it can thus process the packet.
+When F receives the packet, it sees that the next hop is D and sends the packet to it.
+
+When D receives the packet, it sees there are no more hops so it must be the final destination: it can thus process the packet.
 
 ```rust
 struct SourceRoutingHeader {
-	/// ID of client or server
-	source_id: &'static str,
-	/// Number of entries in the hops field.
-	/// Must be at least 1.
-	n_hops: usize;
-	/// List of nodes to which to forward the packet.
-	hops: [i64; 4],
-	/// Index of the receiving node in the hops field.
-	/// Ranges from 0 to n_hops - 1.
-	hop_index: u64,
+	/// Vector of nodes with initiator and nodes to which the packet will be forwarded to.
+	hops: Vec<u64>
 }
 ```
 
@@ -102,12 +96,12 @@ struct Query {
 	/// Unique identifier of the flood, to prevent loops.
 	flood_id: u64,
 	/// ID of client or server
-	initiator_id: RC<Arc<usize>>,
+	initiator_id: u64,
 	/// Time To Live, decremented at each hop to limit the query's lifespan.
+	/// When ttl reaches 0, we start a QueryResult message that reaches back to the initiator
 	ttl: u64,
 	/// Records the nodes that have been traversed (to track the connections).
-	path_trace: [u64; 20]
-	node_types: [NodeType; ]
+	path_trace: Vec<(u64, NodeType)>
 }
 ```
 
@@ -115,9 +109,16 @@ struct Query {
 
 When a neighbor node receives the query, it processes it based on the following rules:
 
-- If the query was received earlier (i.e., the query identifier is already known), the node broadcasts the query to increase the robustness.
-- Otherwise, the node appends its own ID and type (that is, Drone, Client, Server) to the **path trace** and forwards the query to its neighbors (except the one it received the query from).
-- Optionally, the node can return an **acknowledgment** or **path information** directly to the initiator, revealing its connection in the process.
+- If the query was not received earlier, the node forwards the updated message to its neighbours (except the one it received the query from) decreasing the TTL by 1, otherwise set the TTL to 0.
+- If the TTL of the message is 0, build a QueryResult and send it along the same path back to the initiator.
+
+```rust
+struct QueryResult {
+	flood_id: u64,
+	sourceRoutingHeader: SourceRoutingHeader,
+	path_trace: Vec<(u64, NodeType)>
+}
+```
 
 ### **Recording Topology Information**
 
@@ -130,7 +131,8 @@ For every response or acknowledgment the initiator receives, it updates its unde
 
 The flood can terminate when:
 
--
+- Timeout after a certain period, depending on the number of nodes and on the maximum timeout in communication channels
+- A drone crashes in the network discovery phase. As soon as the initiator knows it, it starts a new flooding with a new flood_id, and it starts ignoring QueryResult messages about the previous flood_id.
 
 # **Client-Server Protocol: Fragments**
 
