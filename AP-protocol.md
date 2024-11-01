@@ -31,7 +31,8 @@ id = "client_id"
 connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
 ```
 - note that `connected_drone_ids` cannot contain `client_id` nor repetitions
-- note that a client cannot connect to other clients or servers.
+- note that a client cannot connect to other clients or servers
+- note that a client can be connected to at most two drones
 
 ### Servers
 Any number of servers, each formatted as:
@@ -41,7 +42,8 @@ id = "server_id"
 connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
 ```
 - note that `connected_drone_ids` cannot contain `server_id` nor repetitions
-- note that a server cannot connect to other clients or servers.
+- note that a server cannot connect to other clients or servers
+- note that a server should be connected to at least two drones
 
 ### Example
 ```toml
