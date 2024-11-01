@@ -28,7 +28,7 @@ Any number of clients, each formatted as:
 ```TOML
 [[client]]  
 id = "client_id"  
-connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
+connected_drone_ids = ["connected_id1", "..."] # max 2 entries
 ```
 - note that `connected_drone_ids` cannot contain `client_id` nor repetitions
 - note that a client cannot connect to other clients or servers
@@ -39,7 +39,7 @@ Any number of servers, each formatted as:
 ```TOML
 [[server]]  
 id = "server_id"  
-connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
+connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."] # at least 2 entries
 ```
 - note that `connected_drone_ids` cannot contain `server_id` nor repetitions
 - note that a server cannot connect to other clients or servers
