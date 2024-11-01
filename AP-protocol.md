@@ -3,38 +3,75 @@
 This document provides the specifications of the communication protocol used by the drones, the client and the servers of the network. In the following document, drones, clients and servers are collectively referred to as **nodes**. The specifications are often broken or incomplete and you must improve over them.
 
 This document also establishes some technical requirements of the project.
-
 # Network Initializer
 
 The **Network Initializer** reads a local **Network Initialization File** that encodes the network topology and the drone parameters and, accordingly, spawns the node threads and sets up the Rust channels for communicating between nodes.
 
-The Network Initialization File has the following format:
+> Importantly, the Network Initializer should also setup the Rust channels between the nodes and the Simulation Controller (see the Simulation Controller section).
 
-- 10 drone lines: `drone_id connected_drone_count connected_drone_ids packet_drop_rate`.
+## Network Initialization File
+The **Network Initialization File** is in the `.toml` format, and structured as explained below:
 
-    Consider this example line: `d1 3 d3 d4 d5 0.05`. It means that drone `d1` is connected with 3 drones `d3`, `d4` and `d5`, and that its Packet Drop Rate is 0.05 .
+### Drones
+Any number of drones, each formatted as:
+```TOML
+[[drone]]  
+id = "drone_id"  
+connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]  
+pdr = "pdr"
+```
+- note that the `pdr` is defined between 0 and 1 (0.05 = 5%).
+- note that `connected_drone_ids` cannot contain `drone_id` nor repetitions
 
-    Note that the PDR is defined between 0 and 1 (0.05 = 5%).
+### Clients
+Any number of clients, each formatted as:
+```TOML
+[[client]]  
+id = "client_id"  
+connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
+```
+- note that `connected_drone_ids` cannot contain `client_id` nor repetitions
+- note that a client cannot connect to other clients or servers.
 
-    Note that `connected_drone_ids` cannot contain `drone_id` nor repetitions.
+### Servers
+Any number of servers, each formatted as:
+```TOML
+[[server]]  
+id = "server_id"  
+connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
+```
+- note that `connected_drone_ids` cannot contain `server_id` nor repetitions
+- note that a server cannot connect to other clients or servers.
 
-- 2 client lines: `client_id connected_drone_count connected_drone_ids`.
-
-    Consider this example line: `c1 2 d2 d3`. It means that client `c1` is connected with 2 drones `d2` and `d3`.
-
-    Note that `connected_drone_ids` cannot contain `client_id` nor repetitions.
-
-    Note that a client cannot connect to other clients or servers.
-
-- 2 server lines: `server_id connected_drone_count connected_drone_ids`.
-
-    Consider this example line: `s1 2 d4 d5`. It means that server `s1` is connected with 2 drones `d4` and `d5`.
-
-    Note that `connected_drone_ids` cannot contain `server_id` nor repetitions.
-
-    Note that a server cannot connect to other clients or servers.
-
-Importantly, the Network Initializer should also setup the Rust channels between the nodes and the Simulation Controller (see the Simulation Controller section).
+### Example
+```toml
+[[drone]]  
+id = "d1"  
+connected_drone_ids = ["d3", "d4", "d5"]  
+pdr = 0.05  
+  
+[[drone]]  
+id = "d2"  
+connected_drone_ids = ["d1", "d8"]  
+pdr = 0.03  
+  
+[[drone]]  
+id = "d3"  
+connected_drone_ids = ["d2", "d6", "d5"]  
+pdr = 0.14  
+  
+[[client]]  
+id = "c1"  
+connected_drone_ids = ["d2", "d3"]  
+  
+[[client]]  
+id = "c2"  
+connected_drone_ids = ["d1"]  
+  
+[[server]]  
+id = "s1"  
+connected_drone_ids = ["d5","d1"]  
+```
 
 # Drone parameters: Packet Drop Rate
 
