@@ -157,141 +157,111 @@ Message is subject to fragmentation: see the dedicated section.
 Message (and Message only) can be dropped by drones.
 
 ```rust
+// Server is multype
+struct ServerType{ // 1 or more must be true
+	isChatServer: bool,
+	isTextServer: bool, // must be true if media is true
+	isMediaServer: bool
+}
+```
+```rust
 struct Message{
-	message_header: MessageHeader,
-	/// Shows the type of the message and contains the message.
-	message_content: MessageContent,
-	/// Used and modified by drones to route the packet.
+	message_data: MessageData,
 	source_routing_header: SourceRoutingHeader
 }
 
-// The serialized and possibly fragmented message sent by
-// either the client or server identified by source_id.
-struct MessageHeader {
-	/// ID of client or server
-	source_id: Option<u64>,
+struct MessageData { // Only part fragmentized
+	source_id: NodeId,
+	session_id: u64
+	message_content: MessageContent
 }
 
 enum MessageContent{
-	ChatMessage(ChatMessage), // chat == communication server
-	TextMessage(TextMessage), // text == content server
-	MediaMessage(MediaMessage)// media == content server
+	Request(MessageRequest),
+	Response(MessageResponse)
+}
+```
+```rust
+enum MessageRequest{ //C -> S
+	Chat(ChatRequest),
+	Data(DataRequest),  // text and media
+	ServerType,
 }
 
-enum ChatMessage{
-	ChatRequest(ChatRequest),
-	ChatResponse(ChatResponse)
+enum MessageResponse{ // S -> C
+	Chat(ChatResponse),
+	Data(DataResponse),  // text and media
+	ServerType(ServerType)
 }
-
-enum ChatRequest{ //(chat == communication server)
-	ClientList, // => C -> S : client_list?
-	MessageFor { // => C -> S : message_for?(client_id, message)
-		// note: message_size omitted!
-		client: u64,
-		message: String,
-	},
-}
-
-enum ChatResponse{
-	ClientList(u64, Vec<u64>), //=> S -> C : client_list!(list_length, list_of_client_ids)
-	MessageFrom{ // => S -> C : message_from!(client_id, message)
-		// note: message_size omitted!
-		client: u64,
-		message: String
-	},
-	ErrWrongClient // => S -> C : error_wrong_client_id!
-}
-
-enum TextMessage{// (text == media server with text)
-	TextRequest(TextRequest),
-	TextResponse(TextResponse)
-}
-
-enum TextRequest{
-	ServerType, //C -> S : server_type?
-	FilesList, //C -> S : files_list?
-	File(file_id),// C -> S : file?(file_id)    note: additional params omitted!
-}
-
-enum TextResponse{
-	ServerType(ServerKind), //S -> C : server_type!(type)
-	FilesListResponse { //S -> C : files_list!(list_length, list_of_file_ids)
-		list_length: char,
-		list_of_file_ids: [u64,20],
-	},
-	ErrorNoFiles, // S -> C : error_no_files!
-	File{ //S -> C : file!(file_size, file)
-		file_size: u64,
-		file: String,
-	},
-	ErrorFileNotFound, //S -> C : error_file_not_found!
-}
-
-enum MediaMessage{
-	MediaRequest(MediaRequest),
-	MediaResponse(MediaResponse)
-}
-
-struct MediaRequest{
-	Media{  //C -> S : media?(media_id, +media type+ )
-		media_id: u64
-		///media: media_kind
+```
+#### Chat message
+```rust
+enum ChatRequest{
+	ClientList,
+	MessageFor {
+		to: NodeId,
+		message: Vec<u8>
 	}
 }
 
-enum MediaResponse{
-	MediaResponse { //S -> C : media!(media_size, media, +media type+)
-		media_id: u64,
-		media_size: u64,
-		media: std::fs::File,
-	},
-	ErrorNoMediaResponse,
-	ErrorMediaNotFoundResponse,//S -> C : error_media_not_found!
+enum ChatResponse{
+	ClientList(Vec<NodeId>),
+	MessageFrom {
+		from: NodeId,
+		message: Vec<u8>
+	}
+	ErrWrongClientId
 }
 ```
-
-### Error
-
-If a drone receives a Message and the next hop specified in the Source Routing Header is not a neighbor of the drone, then it sends Error to the client.
-
-This message cannot be dropped by drones due to Packet Drop Rate.
-
+#### Data message
 ```rust
-struct Error {
-	session_id: u64,
-	/// ID of drone, server of client that is not a neighbor:
-	id_not_neighbor: String,
-	ttl: u32,
+enum DataRequest{
+	FilesList,
+	File(u64),
+	Media(u64)
+}
+
+enum DataResponse{
+	FilesListResponse(Vec<u64>),
+	FileResponse(Vec<u8>),
+	MediaResponse(Vec<u8>),
+	ErrIsNotMediaServer,
+	ErrRequestedNotFound,
 }
 ```
+
+### NACK
+If an error occurs that a NACK is sent. A NACK can be of type:
+1. **ErrorInRouting**: If a drone receives a Message and the next hop specified in the Source Routing Header is not a neighbor of the drone, then it sends Error to the client.
+2. **Dropped**: If a drone receives a Message that must be dropped due to the Packet Drop Probability, then it sends Dropped to the client.
 
 Source Routing Header contains the path to the client, which can be obtained by reversing the list of hops contained in the Source Routing Header of the problematic Message.
 
-### Dropped
-
-If a drone receives a Message that must be dropped due to the Packet Drop Rate, then it sends Dropped twice to the client.
-
-This message cannot be dropped by drones due to Packet Drop Rate.
+This message cannot be dropped by drones due to Packet Drop Probability.
 
 ```rust
-struct Dropped {
+struct Nack{
+	error_type: NackType,
 	session_id: u64,
+	source_routing_header: SourceRoutingHeader
+	ttl: u64,
+}
+
+enum NackType{
+	ErrorInRouting(NodeId), // contains id of not neighbor
+	Dropped
 }
 ```
-
-Source Routing Header contains the path to the client, which can be obtained by reversing the list of hops contained in the Source Routing Header of the problematic Message.
 
 ### Ack
 
 If a drone receives a Message and can forward it to the next hop, it also sends an Ack to the client.
 
 ```rust
-pub struct Ack(AckInner);
-
-struct AckInner {
+pub struct Ack{
 	session_id: u64,
-	when: std::time::Instant,
-	// Time at which the message was received.
+	source_routing_header: SourceRoutingHeader
+	received_time: std::time::Instant,
 }
 ```
 
@@ -419,20 +389,17 @@ Notice that these messages are not subject to the rules of fragmentation, in fac
 - C -> S : server_type?
 - S -> C : server_type!(type)
 - C -> S : files_list?
-- S -> C : files_list!(list_length, list_of_file_ids)
-- S -> C : error_no_files!
-- C -> S : file?(file_id, list_length, list_of_media_ids)
+- S -> C : files_list!(list_of_file_ids)
+- C -> S : file?(file_id)
 - S -> C : file!(file_size, file)
-- S -> C : error_file_not_found!
 - C -> S : media?(media_id)
-- S -> C : media!(media_size, media)
-- S -> C : error_no_media!
-- S -> C : error_media_not_found!
+- S -> C : media!(media)
+- S -> C : error_requested_not_found!
 
 ### Chat Messages
 
 - C -> S : client_list?
-- S -> C : client_list!(list_length, list_of_client_ids)
-- C -> S : message_for?(client_id, message_size, message)
-- S -> C : message_from!(client_id, message_size, message)
+- S -> C : client_list!(list_of_client_ids)
+- C -> S : message_for?(client_id, message)
+- S -> C : message_from!(client_id, message)
 - S -> C : error_wrong_client_id!
