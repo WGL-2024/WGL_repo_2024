@@ -4,6 +4,15 @@ This document provides the specifications of the communication protocol used by 
 
 This document also establishes some technical requirements of the project.
 
+# Types used in this document
+Can be useful for understanding and for not having to change the underlining type everywhere.
+
+``` Rust
+type NodeId = u64;
+
+```
+
+
 # Network Initializer
 
 The **Network Initializer** reads a local **Network Initialization File** that encodes the network topology and the drone parameters and, accordingly, spawns the node threads and sets up the Rust channels for communicating between nodes.
@@ -73,12 +82,12 @@ When D receives the packet, it sees there are no more hops (as hop_index is equa
 ```rust
 struct SourceRoutingHeader {
 	/// ID of client or server
-	source_id: &'static str,
+	source_id: NodeId,
 	/// Number of entries in the hops field.
 	/// Must be at least 1.
-	n_hops: usize;
+	n_hops: u64;
 	/// List of nodes to which to forward the packet.
-	hops: [i64; 4],
+	hops: Vec<NodeId>,
 	/// Index of the receiving node in the hops field.
 	/// Ranges from 0 to n_hops - 1.
 	hop_index: u64,
@@ -102,12 +111,12 @@ struct Query {
 	/// Unique identifier of the flood, to prevent loops.
 	flood_id: u64,
 	/// ID of client or server
-	initiator_id: RC<Arc<usize>>,
+	initiator_id: NodeId,
 	/// Time To Live, decremented at each hop to limit the query's lifespan.
 	ttl: u64,
 	/// Records the nodes that have been traversed (to track the connections).
-	path_trace: [u64; 20]
-	node_types: [NodeType; ]
+	path_trace: Vec<NodeId>
+	node_types: Vec<NodeType>
 }
 ```
 
