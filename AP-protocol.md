@@ -247,8 +247,24 @@ pub enum DataResponse{
 	ErrRequestedNotFound
 }
 ```
+
+Example of a data server replying to a file list request:
+```rust
+match content{
+	Request(DataResponse(data)) =>{
+		match data{
+			FilesList => {
+				let files = getFilesList();
+				respondWithContent(
+					Response(DataResponse(FilesList(files))));
+			}
+			// [...]
+		}
+	}
+	_ => {}
 }
 ```
+
 
 ### NACK
 If an error occurs that a NACK is sent. A NACK can be of type:
