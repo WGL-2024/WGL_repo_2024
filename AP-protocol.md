@@ -48,31 +48,31 @@ connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
 ### Example
 ```toml
 [[drone]]  
-id = "d1"  
-connected_drone_ids = ["d3", "d4", "d5"]  
+id = 1  
+connected_drone_ids = [2, 3]  
 pdr = 0.05  
   
 [[drone]]  
-id = "d2"  
-connected_drone_ids = ["d1", "d8"]  
+id = 2 
+connected_drone_ids = [1,3,4]  
 pdr = 0.03  
   
 [[drone]]  
-id = "d3"  
-connected_drone_ids = ["d2", "d6", "d5"]  
+id = 3  
+connected_drone_ids = [2,1,4]  
 pdr = 0.14  
   
 [[client]]  
-id = "c1"  
-connected_drone_ids = ["d2", "d3"]  
+id = 4 
+connected_drone_ids = [3, 2]  
   
 [[client]]  
-id = "c2"  
-connected_drone_ids = ["d1"]  
+id = 5  
+connected_drone_ids = [1]  
   
 [[server]]  
-id = "s1"  
-connected_drone_ids = ["d5","d1"]  
+id = 6  
+connected_drone_ids = [2,3]  
 ```
 
 # Drone parameters: Packet Drop Rate
