@@ -167,45 +167,51 @@ Message (and Message only) can be dropped by drones.
 
 ```rust
 // Server is multype
-struct ServerType{ // 1 or more must be true
+#define[Debug]
+pub struct ServerType{ // 1 or more must be true
 	isChatServer: bool,
 	isTextServer: bool, // must be true if media is true
 	isMediaServer: bool
 }
-```
-```rust
-struct Message{
+
+#define[Debug]
+pub struct Message{
 	message_data: MessageData,
-	source_routing_header: SourceRoutingHeader
+	routing_header: SourceRoutingHeader
 }
 
-struct MessageData { // Only part fragmentized
+#define[Debug]
+pub struct MessageData { // Only part fragmentized
 	source_id: NodeId,
-	session_id: u64
-	message_content: MessageContent
+	session_id: u64,
+	content: MessageContent
 }
 
-enum MessageContent{
+#define[Debug]
+pub enum MessageContent{
 	Request(MessageRequest),
 	Response(MessageResponse)
 }
-```
-```rust
-enum MessageRequest{ //C -> S
+
+#define[Debug]
+pub enum MessageRequest{ //C -> S
 	Chat(ChatRequest),
 	Data(DataRequest),  // text and media
 	ServerType,
 }
 
-enum MessageResponse{ // S -> C
+#define[Debug]
+pub enum MessageResponse{ // S -> C
 	Chat(ChatResponse),
 	Data(DataResponse),  // text and media
 	ServerType(ServerType)
 }
 ```
+
 #### Chat message
 ```rust
-enum ChatRequest{
+#define[Debug]
+pub enum ChatRequest{
 	ClientList,
 	MessageFor {
 		to: NodeId,
@@ -213,29 +219,34 @@ enum ChatRequest{
 	}
 }
 
-enum ChatResponse{
+#define[Debug]
+pub enum ChatResponse{
 	ClientList(Vec<NodeId>),
 	MessageFrom {
 		from: NodeId,
 		message: Vec<u8>
-	}
+	},
 	ErrWrongClientId
 }
 ```
 #### Data message
 ```rust
-enum DataRequest{
+#define[Debug]
+pub enum DataRequest{
 	FilesList,
 	File(u64),
 	Media(u64)
 }
 
-enum DataResponse{
-	FilesListResponse(Vec<u64>),
-	FileResponse(Vec<u8>),
-	MediaResponse(Vec<u8>),
+#define[Debug]
+pub enum DataResponse{
+	FilesList(Vec<u64>),
+	File(Vec<u8>),
+	Media(Vec<u8>),
 	ErrIsNotMediaServer,
-	ErrRequestedNotFound,
+	ErrRequestedNotFound
+}
+```
 }
 ```
 
