@@ -1,6 +1,6 @@
-use crate::types::packet::Fragment;
+//use crate::types::packet::Fragment;
 struct Message {}
-
+pub struct Fragment{}
 impl Message {
     fn serialize(&self) -> String {
         unimplemented!()

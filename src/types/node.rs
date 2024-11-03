@@ -2,12 +2,14 @@
     Client(u64), MediaServer(u64), TextServer(u64), Drone(u64)
 }
  */
-use crate::types::packet::{Fragment, Packet};
+//use crate::types::packet::{Fragment, Packet};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 //use crate::types::message::Message;
-use crate::types::routing::Query;
+//use crate::types::routing::Query;
+pub struct Packet{}
+pub struct Query{}
 type NodeId = u64;
 
 pub struct Node {
