@@ -5,7 +5,7 @@ use crate::types::SourceRoutingHeader;
 #[derive(Debug)]
 pub struct ServerType {
     is_chat_server: bool,
-	// Text support must be true if media support is true
+    // Text support must be true if media support is true
     is_text_server: bool,
     is_media_server: bool,
 }
