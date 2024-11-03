@@ -1,3 +1,2 @@
-pub mod message_api;
-pub mod node;
-pub mod simulation_controller;
+pub mod message;
+pub mod topology;
