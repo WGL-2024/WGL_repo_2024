@@ -1,45 +1,45 @@
 // Server is multype
-#define[Debug]
+#[derive(Debug)]
 pub struct ServerType{ // 1 or more must be true
 	isChatServer: bool,
 	isTextServer: bool, // must be true if media is true
 	isMediaServer: bool
 }
 
-#define[Debug]
+#[derive(Debug)]
 pub struct Message{
 	message_data: MessageData,
 	routing_header: SourceRoutingHeader
 }
 
-#define[Debug]
+#[derive(Debug)]
 pub struct MessageData { // Only part fragmentized
 	source_id: NodeId,
 	session_id: u64,
 	content: MessageContent
 }
 
-#define[Debug]
+#[derive(Debug)]
 pub enum MessageContent{
 	Request(MessageRequest),
 	Response(MessageResponse)
 }
 
-#define[Debug]
+#[derive(Debug)]
 pub enum MessageRequest{ //C -> S
 	Chat(ChatRequest),
 	Data(DataRequest),  // text and media
 	ServerType,
 }
 
-#define[Debug]
+#[derive(Debug)]
 pub enum MessageResponse{ // S -> C
 	Chat(ChatResponse),
 	Data(DataResponse),  // text and media
 	ServerType(ServerType)
 }
 
-#define[Debug]
+#[derive(Debug)]
 pub enum ChatRequest{
 	ClientList,
 	MessageFor {
@@ -48,7 +48,7 @@ pub enum ChatRequest{
 	}
 }
 
-#define[Debug]
+#[derive(Debug)]
 pub enum ChatResponse{
 	ClientList(Vec<NodeId>),
 	MessageFrom {
@@ -58,14 +58,14 @@ pub enum ChatResponse{
 	ErrWrongClientId
 }
 
-#define[Debug]
+#[derive(Debug)]
 pub enum DataRequest{
 	FilesList,
 	File(u64),
 	Media(u64)
 }
 
-#define[Debug]
+#[derive(Debug)]
 pub enum DataResponse{
 	FilesList(Vec<u64>),
 	File(Vec<u8>),
