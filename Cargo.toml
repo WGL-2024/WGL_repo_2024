@@ -1,0 +1,5 @@
+[package]
+name = "wgl_repo_2024"
+edition = "2021"
+
+[dependencies]
