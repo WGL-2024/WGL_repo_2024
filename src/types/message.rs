@@ -1,10 +1,14 @@
+use crate::types::NodeId;
+use crate::types::SourceRoutingHeader;
+
 // Server is multype
 #[derive(Debug)]
 pub struct ServerType{ // 1 or more must be true
-	isChatServer: bool,
-	isTextServer: bool, // must be true if media is true
-	isMediaServer: bool
+	is_chat_server: bool,
+	is_text_server: bool, // must be true if media is true
+	is_media_server: bool
 }
+
 
 #[derive(Debug)]
 pub struct Message{
@@ -74,8 +78,9 @@ pub enum DataResponse{
 	ErrRequestedNotFound
 }
 
+
 impl Message{
-	fn new(routing_header: SourceRoutingHeader, source_id: NodeId, session_id: u64, content: MessageContent) -> Self{
+	pub fn new(routing_header: SourceRoutingHeader, source_id: NodeId, session_id: u64, content: MessageContent) -> Self{
 		Self{
 			routing_header,
 			message_data: MessageData{
@@ -87,20 +92,29 @@ impl Message{
 	}
 }
 
-fn main(){
 
+impl MessageContent{
+	pub fn new_chat_req(request: ChatRequest) -> Self{
+		Self::Request(MessageRequest::Chat(request))
+	}
 
-	match content{
-		Request(DataResponse(data)) =>{
-			match data{
-				FilesList => {
-					let files = getFilesList();
-					respondWithContent(
-						Response(DataResponse(FilesList(files))));
-				}
-				// [...]
-			}
-		}
-		_ => {}
+	pub fn new_data_req(request: DataRequest) -> Self{
+		Self::Request(MessageRequest::Data(request))
+	}
+
+	pub fn new_server_type_req() -> Self{
+		Self::Request(MessageRequest::ServerType)
+	}
+
+	pub fn new_chat_resp(response: ChatResponse) -> Self{
+		Self::Response(MessageResponse::Chat(response))
+	}
+
+	pub fn new_data_resp(response: DataResponse) -> Self{
+		Self::Response(MessageResponse::Data(response))
+	}
+
+	pub fn new_server_type_resp(server_type: ServerType) -> Self{
+		Self::Response(MessageResponse::ServerType(server_type))
 	}
 }
