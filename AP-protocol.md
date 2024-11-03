@@ -234,14 +234,7 @@ Source Routing Header contains the path to the client, which can be obtained by 
 This message cannot be dropped by drones due to Packet Drop Probability.
 
 ```rust
-struct Nack{
-	error_type: NackType,
-	session_id: u64,
-	source_routing_header: SourceRoutingHeader
-	ttl: u64,
-}
-
-enum NackType{
+pub enum Nack{
 	ErrorInRouting(NodeId), // contains id of not neighbor
 	Dropped
 }
@@ -253,9 +246,7 @@ If a drone receives a Message and can forward it to the next hop, it also sends 
 
 ```rust
 pub struct Ack{
-	session_id: u64,
-	source_routing_header: SourceRoutingHeader
-	received_time: std::time::Instant,
+	received_time: std::time::Instant
 }
 ```
 
@@ -274,35 +265,31 @@ constitute files.
 ### Fragment reassembly
 
 ```rust
-struct Packet{ //fragment defined as entity exchanged by the drones.
-	pt: PacketType,
-	source_routing_header: SourceRoutingHeader,
+//fragment defined as atomic message exchanged by the drones.
+pub struct Packet {
+	pack_type: PacketType,
+	routing_header: SourceRoutingHeader,
 	session_id: u64
-	//sourcerouting header is inverted if necessary.
 }
 
 enum PacketType {
-	MsgPack(Fragment), ErrorPack(Error), AckPack(Ack), DroppedPack(Dropped)
+	Message(Fragment),
+	Nack(Nack),
+	Ack(Ack)
 }
 
-struct Fragment{ // fragment defined as part of a message.
-	header: FragmentHeader,
-	data: FragmentData,
-}
-
-struct FragmentData{
-	data: [u8; 80], //it's possible to use .into_bytes() so that images
-	//can also be encoded->[u8, 80]
-	length: u8 // assembler will fragment/defragment data into bytes.
-}
-
-pub struct FragmentHeader {
-	/// Identifies the session to which this fragment belongs.
-	session_id: u64,
-	/// Total number of fragments, must be equal or greater than 1.
-	total_n_fragments: u64,
-	/// Index of the packet, from 0 up to total_n_fragments - 1.
+// fragment defined as part of a message.
+pub struct Fragment {
 	fragment_index: u64,
+	total_n_fragments: u64
+
+	data: FragmentData
+}
+
+struct FragmentData {
+	length: u8,
+	// assembler will fragment/defragment data into bytes.
+	data: [u8; 80] // usable for image with .into_bytes()
 }
 ```
 
