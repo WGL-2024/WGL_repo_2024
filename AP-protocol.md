@@ -186,89 +186,41 @@ pub struct MessageData { // Only part fragmentized
 	session_id: u64,
 	content: MessageContent
 }
+```
 
+#### Message Types
+```rust
 #[derive(Debug)]
 pub enum MessageContent{
-	Request(MessageRequest),
-	Response(MessageResponse)
-}
+	// Client -> Server
+	ReqServerType,
+	ReqFilesList,
+	ReqFile(u64),
+	ReqMedia(u64),
 
-#[derive(Debug)]
-pub enum MessageRequest{ //C -> S
-	Chat(ChatRequest),
-	Data(DataRequest),  // text and media
-	ServerType,
-}
-
-#[derive(Debug)]
-pub enum MessageResponse{ // S -> C
-	Chat(ChatResponse),
-	Data(DataResponse),  // text and media
-	ServerType(ServerType)
-}
-```
-
-#### Chat message
-```rust
-#[derive(Debug)]
-pub enum ChatRequest{
-	ClientList,
-	MessageFor {
-		to: NodeId,
-		message: Vec<u8>
-	}
+	ReqClientList,
+	ReqMessageSend { to: NodeId, message: Vec<u8> },
 	// Do we need request of new messages? or directly sent by server?
-}
 
-#[derive(Debug)]
-pub enum ChatResponse{
-	ClientList(Vec<NodeId>),
-	MessageFrom {
-		from: NodeId,
-		message: Vec<u8>
-	},
-	ErrWrongClientId
-}
-```
-#### Data message
-```rust
-#[derive(Debug)]
-pub enum DataRequest{
-	FilesList,
-	File(u64),
-	Media(u64)
-}
-
-#[derive(Debug)]
-pub enum DataResponse{
-	FilesList(Vec<u64>),
-	File(Vec<u8>),
-	Media(Vec<u8>),
-	ErrIsNotMediaServer,
+	// Server -> Client
+	RespServerType(ServerType)
+	RespFilesList(Vec<u64>),
+	RespFile(Vec<u8>),
+	RespMedia(Vec<u8>),
+	ErrUnsupporedRequestType,
 	ErrRequestedNotFound
+
+	RespClientList(Vec<NodeId>),
+	RespMessageFrom { from: NodeId, message: Vec<u8> },
+	ErrWrongClientId,
 }
 ```
 
-This is pretty hard to use so constructor are provided.
-
-Example of a data server replying to a file list request:
+Example of new request:
 ```rust
-match content{
-	MessageContent::Request(MessageRequest::Data(data)) =>{
-		match data{
-			FilesList => {
-				let files = get_files_list();
-				let contentResponse MessageContent::new_data_resp(
-						DataResponse::FilesList(files));
-
-				// [...] Continue to send back
-			}
-			// [...]
-			_ => {}
-		}
-	}
-	_ => {}
-}
+let routing = getRoutingHeader();
+let content = MessageType:ReqFile(8);
+Message::new(ruting, source_id, session_id, content)
 ```
 
 
@@ -437,6 +389,7 @@ Notice that these messages are not subject to the rules of fragmentation, in fac
 - C -> S : media?(media_id)
 - S -> C : media!(media)
 - S -> C : error_requested_not_found!
+- S -> C : error_unsupported_request!
 
 ### Chat Messages
 

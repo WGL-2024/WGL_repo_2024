@@ -25,57 +25,27 @@ pub struct MessageData { // Only part fragmentized
 
 #[derive(Debug)]
 pub enum MessageContent{
-	Request(MessageRequest),
-	Response(MessageResponse)
-}
+	// Client -> Server
+	ReqServerType,
+	ReqFilesList,
+	ReqFile(u64),
+	ReqMedia(u64),
 
-#[derive(Debug)]
-pub enum MessageRequest{ //C -> S
-	Chat(ChatRequest),
-	Data(DataRequest),  // text and media
-	ServerType,
-}
+	ReqClientList,
+	ReqMessageSend { to: NodeId, message: Vec<u8> },
+	// Do we need request of new messages? or directly sent by server?
 
-#[derive(Debug)]
-pub enum MessageResponse{ // S -> C
-	Chat(ChatResponse),
-	Data(DataResponse),  // text and media
-	ServerType(ServerType)
-}
+	// Server -> Client
+	RespServerType(ServerType),
+	RespFilesList(Vec<u64>),
+	RespFile(Vec<u8>),
+	RespMedia(Vec<u8>),
+	ErrUnsupporedRequestType,
+	ErrRequestedNotFound,
 
-#[derive(Debug)]
-pub enum ChatRequest{
-	ClientList,
-	MessageFor {
-		to: NodeId,
-		message: Vec<u8>
-	}
-}
-
-#[derive(Debug)]
-pub enum ChatResponse{
-	ClientList(Vec<NodeId>),
-	MessageFrom {
-		from: NodeId,
-		message: Vec<u8>
-	},
-	ErrWrongClientId
-}
-
-#[derive(Debug)]
-pub enum DataRequest{
-	FilesList,
-	File(u64),
-	Media(u64)
-}
-
-#[derive(Debug)]
-pub enum DataResponse{
-	FilesList(Vec<u64>),
-	File(Vec<u8>),
-	Media(Vec<u8>),
-	ErrIsNotMediaServer,
-	ErrRequestedNotFound
+	RespClientList(Vec<NodeId>),
+	RespMessageFrom { from: NodeId, message: Vec<u8> },
+	ErrWrongClientId,
 }
 
 
@@ -93,28 +63,3 @@ impl Message{
 }
 
 
-impl MessageContent{
-	pub fn new_chat_req(request: ChatRequest) -> Self{
-		Self::Request(MessageRequest::Chat(request))
-	}
-
-	pub fn new_data_req(request: DataRequest) -> Self{
-		Self::Request(MessageRequest::Data(request))
-	}
-
-	pub fn new_server_type_req() -> Self{
-		Self::Request(MessageRequest::ServerType)
-	}
-
-	pub fn new_chat_resp(response: ChatResponse) -> Self{
-		Self::Response(MessageResponse::Chat(response))
-	}
-
-	pub fn new_data_resp(response: DataResponse) -> Self{
-		Self::Response(MessageResponse::Data(response))
-	}
-
-	pub fn new_server_type_resp(server_type: ServerType) -> Self{
-		Self::Response(MessageResponse::ServerType(server_type))
-	}
-}
