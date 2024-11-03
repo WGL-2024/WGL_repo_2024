@@ -1,12 +1,12 @@
 use crate::types::NodeId;
 use crate::types::SourceRoutingHeader;
 
-// Server is multype
+// Server is multype (1 or more must be true)
 #[derive(Debug)]
 pub struct ServerType {
-    // 1 or more must be true
     is_chat_server: bool,
-    is_text_server: bool, // must be true if media is true
+	// Text support must be true if media support is true
+    is_text_server: bool,
     is_media_server: bool,
 }
 
@@ -16,9 +16,9 @@ pub struct Message {
     routing_header: SourceRoutingHeader,
 }
 
+// Only part fragmentized
 #[derive(Debug)]
 pub struct MessageData {
-    // Only part fragmentized
     source_id: NodeId,
     session_id: u64,
     content: MessageContent,
@@ -34,7 +34,6 @@ pub enum MessageContent {
 
     ReqClientList,
     ReqMessageSend { to: NodeId, message: Vec<u8> },
-    // Do we need request of new messages? or directly sent by server?
 
     // Server -> Client
     RespServerType(ServerType),
