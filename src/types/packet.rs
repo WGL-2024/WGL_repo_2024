@@ -28,11 +28,11 @@ pub struct Ack{
 
 pub struct Fragment {
 	fragment_index: u64,
-	total_n_fragments: u64
+	total_n_fragments: u64,
 	data: FragmentData
 }
 
 struct FragmentData {
-	length: u8
-	data: [u8; 80],
+	length: u8,
+	data: [u8; 80]
 }
