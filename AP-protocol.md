@@ -8,6 +8,14 @@ This document also establishes some technical requirements of the project.
 
 The **Network Initializer** reads a local **Network Initialization File** that encodes the network topology and the drone parameters and, accordingly, spawns the node threads and sets up the Rust channels for communicating between nodes.
 
+## Id Format
+
+ Each ID consists of three fields in the following format: ABN.
+
+- **A** represents the type of node: `0` for client, `1` for server, and `2` for drone.
+- **B** indicates the group that created the node (it is always `00` for clients or servers).
+- **N** represents the node number.
+
 The Network Initialization File has the following format:
 
 - 10 drone lines: `drone_id connected_drone_count connected_drone_ids packet_drop_rate`.
@@ -33,6 +41,8 @@ The Network Initialization File has the following format:
     Note that `connected_drone_ids` cannot contain `server_id` nor repetitions.
 
     Note that a server cannot connect to other clients or servers.
+
+Every `drone_id`, `client_id` and `server_id` respect the Id Format defined above. 
 
 Importantly, the Network Initializer should also setup the Rust channels between the nodes and the Simulation Controller (see the Simulation Controller section).
 
