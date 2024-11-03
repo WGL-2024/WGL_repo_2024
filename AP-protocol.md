@@ -169,9 +169,9 @@ Message (and Message only) can be dropped by drones.
 // Server is multype
 #[derive(Debug)]
 pub struct ServerType{ // 1 or more must be true
-	isChatServer: bool,
-	isTextServer: bool, // must be true if media is true
-	isMediaServer: bool
+	is_chat_server: bool,
+	is_text_server: bool, // must be true if media is true
+	is_media_server: bool
 }
 
 #[derive(Debug)]
@@ -217,6 +217,7 @@ pub enum ChatRequest{
 		to: NodeId,
 		message: Vec<u8>
 	}
+	// Do we need request of new messages? or directly sent by server?
 }
 
 #[derive(Debug)]
@@ -248,17 +249,22 @@ pub enum DataResponse{
 }
 ```
 
+This is pretty hard to use so constructor are provided.
+
 Example of a data server replying to a file list request:
 ```rust
 match content{
-	Request(DataResponse(data)) =>{
+	MessageContent::Request(MessageRequest::Data(data)) =>{
 		match data{
 			FilesList => {
-				let files = getFilesList();
-				respondWithContent(
-					Response(DataResponse(FilesList(files))));
+				let files = get_files_list();
+				let contentResponse MessageContent::new_data_resp(
+						DataResponse::FilesList(files));
+
+				// [...] Continue to send back
 			}
 			// [...]
+			_ => {}
 		}
 	}
 	_ => {}
