@@ -182,7 +182,6 @@ pub struct Message{
 
 #[derive(Debug)]
 pub struct MessageData { // Only part fragmentized
-	source_id: NodeId,
 	session_id: u64,
 	content: MessageContent
 }
