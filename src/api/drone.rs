@@ -1,6 +1,5 @@
-use crate::types::topology::routes::Path;
+use crate::types::packet::Packet;
 
-pub struct Packet {}
 pub trait DroneAble {
     fn forward_packet(&self, packet: Packet) -> bool;
 }
