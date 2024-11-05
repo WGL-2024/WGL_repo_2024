@@ -278,8 +278,8 @@ pub struct Packet {
 	session_id: u64
 }
 
-enum PacketType {
-	Message(Fragment),
+pub enum PacketType {
+	MsgFragment(Fragment),
 	Nack(Nack),
 	Ack(Ack)
 }
