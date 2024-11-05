@@ -47,8 +47,9 @@ pub enum MessageContent {
     ErrRequestedNotFound,
 
     RespClientList(Vec<NodeId>),
-    ResqNewMsgs(Vec<ChatMsg>),
+    RespNewMsgs(Vec<ChatMsg>),
     ErrWrongClientId,
+    ErrClientIsNotRegistered,
 }
 
 #[derive(Debug)]
