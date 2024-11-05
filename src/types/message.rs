@@ -34,7 +34,7 @@ pub enum MessageContent {
     ReqMedia(u64),
 
     ReqClientList,
-    ReqMessageSend { to: NodeId, message: Vec<u8> },
+    ReqRegisterInClientList,
 
     // Server -> Client
     RespServerType(ServerType),
