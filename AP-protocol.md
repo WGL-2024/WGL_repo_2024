@@ -233,9 +233,15 @@ Source Routing Header contains the path to the client, which can be obtained by 
 This message cannot be dropped by drones due to Packet Drop Probability.
 
 ```rust
-pub enum Nack{
+pub struct Nack{
+	fragment_index: u64,
+	time_of_fail: std::time::Instant,
+	nack_type: NackType
+}
+
+pub enum NackType{
 	ErrorInRouting(NodeId), // contains id of not neighbor
-	Dropped
+	Dropped()
 }
 ```
 
@@ -245,7 +251,8 @@ If a drone receives a Message and can forward it to the next hop, it also sends 
 
 ```rust
 pub struct Ack{
-	received_time: std::time::Instant
+	fragment_index: u64,
+	time_received: std::time::Instant
 }
 ```
 
@@ -281,7 +288,6 @@ enum PacketType {
 pub struct Fragment {
 	fragment_index: u64,
 	total_n_fragments: u64
-
 	data: FragmentData
 }
 

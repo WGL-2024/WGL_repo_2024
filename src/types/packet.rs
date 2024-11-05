@@ -14,13 +14,20 @@ enum PacketType {
     Ack(Ack),
 }
 
-pub enum Nack {
+pub struct Nack {
+    fragment_index: u64,
+    time_of_fail: std::time::Instant,
+    nack_type: NackType,
+}
+
+pub enum NackType {
     ErrorInRouting(NodeId), // contains id of not neighbor
-    Dropped,
+    Dropped(),
 }
 
 pub struct Ack {
-    received_time: std::time::Instant,
+fragment_index: u64,
+    time_received: std::time::Instant,
 }
 
 pub struct Fragment {
