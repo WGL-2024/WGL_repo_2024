@@ -26,7 +26,7 @@ pub enum NackType {
 }
 
 pub struct Ack {
-fragment_index: u64,
+    fragment_index: u64,
     time_received: std::time::Instant,
 }
 
