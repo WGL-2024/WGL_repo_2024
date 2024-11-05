@@ -291,7 +291,7 @@ pub struct Fragment {
 	data: FragmentData
 }
 
-struct FragmentData {
+pub struct FragmentData {
 	length: u8,
 	// assembler will fragment/defragment data into bytes.
 	data: [u8; 80] // usable for image with .into_bytes()

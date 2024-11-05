@@ -36,7 +36,7 @@ pub struct Fragment {
     data: FragmentData,
 }
 
-struct FragmentData {
+pub struct FragmentData {
     length: u8,
     data: [u8; 80],
 }
