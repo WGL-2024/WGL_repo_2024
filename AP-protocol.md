@@ -219,7 +219,7 @@ Example of new request:
 ```rust
 let routing = getRoutingHeader();
 let content = MessageType:ReqFile(8);
-Message::new(ruting, source_id, session_id, content)
+Message::new(routing, source_id, session_id, content)
 ```
 
 
