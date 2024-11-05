@@ -25,9 +25,9 @@ The **Network Initialization File** is in the `.toml` format, and structured as 
 ### Drones
 Any number of drones, each formatted as:
 ```TOML
-[[drone]]  
-id = "drone_id"  
-connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]  
+[[drone]]
+id = "drone_id"
+connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
 pdr = "pdr"
 ```
 - note that the `pdr` is defined between 0 and 1 (0.05 = 5%).
@@ -36,8 +36,8 @@ pdr = "pdr"
 ### Clients
 Any number of clients, each formatted as:
 ```TOML
-[[client]]  
-id = "client_id"  
+[[client]]
+id = "client_id"
 connected_drone_ids = ["connected_id1", "..."] # max 2 entries
 ```
 - note that `connected_drone_ids` cannot contain `client_id` nor repetitions
@@ -47,8 +47,8 @@ connected_drone_ids = ["connected_id1", "..."] # max 2 entries
 ### Servers
 Any number of servers, each formatted as:
 ```TOML
-[[server]]  
-id = "server_id"  
+[[server]]
+id = "server_id"
 connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."] # at least 2 entries
 ```
 - note that `connected_drone_ids` cannot contain `server_id` nor repetitions
@@ -57,32 +57,32 @@ connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
 
 ### Example
 ```toml
-[[drone]]  
-id = 1  
-connected_drone_ids = [2, 3]  
-pdr = 0.05  
-  
-[[drone]]  
-id = 2 
-connected_drone_ids = [1,3,4]  
-pdr = 0.03  
-  
-[[drone]]  
-id = 3  
-connected_drone_ids = [2,1,4]  
-pdr = 0.14  
-  
-[[client]]  
-id = 4 
-connected_drone_ids = [3, 2]  
-  
-[[client]]  
-id = 5  
-connected_drone_ids = [1]  
-  
-[[server]]  
-id = 6  
-connected_drone_ids = [2,3]  
+[[drone]]
+id = 1
+connected_drone_ids = [2, 3]
+pdr = 0.05
+
+[[drone]]
+id = 2
+connected_drone_ids = [1,3,4]
+pdr = 0.03
+
+[[drone]]
+id = 3
+connected_drone_ids = [2,1,4]
+pdr = 0.14
+
+[[client]]
+id = 4
+connected_drone_ids = [3, 2]
+
+[[client]]
+id = 5
+connected_drone_ids = [1]
+
+[[server]]
+id = 6
+connected_drone_ids = [2,3]
 ```
 
 # Drone parameters: Packet Drop Rate
