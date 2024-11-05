@@ -166,12 +166,12 @@ Message is subject to fragmentation: see the dedicated section.
 Message (and Message only) can be dropped by drones.
 
 ```rust
-// Server is multype
 #[derive(Debug)]
-pub struct ServerType{ // 1 or more must be true
-	is_chat_server: bool,
-	is_text_server: bool, // must be true if media is true
-	is_media_server: bool
+pub enum ServerType{
+	ChatServer, // only does chat
+	TextServer, // only does text
+	MediaServer, // does text and media
+	HybridServer // does all of them
 }
 
 #[derive(Debug)]
