@@ -35,6 +35,8 @@ pub enum MessageContent {
 
     ReqClientList,
     ReqRegisterInClientList,
+    ReqChatMsgSend { to: NodeId, chat_msg: Vec<u8> },
+    ReqNewChatMsgs,
 
     // Server -> Client
     RespServerType(ServerType),
@@ -45,8 +47,14 @@ pub enum MessageContent {
     ErrRequestedNotFound,
 
     RespClientList(Vec<NodeId>),
-    RespMessageFrom { from: NodeId, message: Vec<u8> },
+    ResqNewMsgs(Vec<ChatMsg>),
     ErrWrongClientId,
+}
+
+#[derive(Debug)]
+pub struct ChatMsg {
+    from: NodeId,
+    chat_msg: Vec<u8>,
 }
 
 impl Message {
