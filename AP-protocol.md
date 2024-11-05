@@ -298,15 +298,8 @@ struct AckInner {
 Source Routing Header contains the path to the client, which can be obtained by reversing the list of hops contained in the Source Routing Header of the problematic Message.
 
 ### Serialization
-// CAN WE DROP THIS PART?
 
 As described in the main document, Message fragment cannot contain dynamically-sized data structures (that is, **no** `Vec`, **no** `String`, etc). Therefore, packets will contain large, fixed-size arrays instead.
-
-In particular, Message packets have the following **limitations**:
-
-- Arrays of up to 5 node_ids, which are used for the lists of node_ids,
-- Arrays of up to 80 `u8`, which are used to communicate the `String`s that
-constitute files.
 
 ### Fragment reassembly
 
