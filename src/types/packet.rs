@@ -1,5 +1,5 @@
-use crate::types::NodeId;
-use crate::types::SourceRoutingHeader;
+use crate::types::channel::Channel;
+use crate::types::srh::{SourceRoutingHeader, NodeId};
 
 // Is atomic unit to be sent
 pub struct Packet {
@@ -12,6 +12,7 @@ pub enum PacketType {
     MsgFragment(Fragment),
     Nack(Nack),
     Ack(Ack),
+    Command(Command),
 }
 
 pub struct Nack {
@@ -30,6 +31,13 @@ pub struct Ack {
     time_received: std::time::Instant,
 }
 
+pub enum Command {
+    NewChannel (Channel),
+    Crash,
+    //Commands called by the Simulation Controller;
+    //Others might and will be added.
+}
+
 pub struct Fragment {
     fragment_index: u64,
     total_n_fragments: u64,
@@ -37,6 +45,8 @@ pub struct Fragment {
 }
 
 pub struct FragmentData {
-    length: u8,
+    length: u8, //?
     data: [u8; 80],
 }
+
+
