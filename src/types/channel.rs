@@ -13,6 +13,7 @@ pub struct Channels{
     pub channels: Rc<RefCell<HashMap<NodeId, Channel>>>,
 }
 
+#[allow(unused_variables)]
 impl Channels{
     pub fn new() -> Self {
         Channels{
