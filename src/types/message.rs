@@ -3,9 +3,9 @@ use crate::types::srh::{SourceRoutingHeader, NodeId};
 
 #[derive(Debug)]
 pub enum ServerType{
-    ChatServer,
-    TextServer,
-    MediaServer,
+    Chat,
+    Text,
+    Media,
 }
 
 #[derive(Debug)]
