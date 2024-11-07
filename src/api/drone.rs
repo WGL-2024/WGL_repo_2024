@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::thread;
 use crate::types::channel::{Channel};
-use crate::types::sourceRoutingHeader::NodeId;
+use crate::types::source_routing_header::NodeId;
 
 pub struct Drone{
     id: NodeId,

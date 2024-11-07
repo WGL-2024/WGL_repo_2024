@@ -2,4 +2,4 @@ pub mod message;
 pub mod packet;
 pub mod topology;
 pub mod channel;
-pub mod sourceRoutingHeader;
+pub mod source_routing_header;
