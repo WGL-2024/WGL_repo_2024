@@ -1,5 +1,5 @@
 use crate::types::packet::Fragment;
-use crate::types::source_routing_header::{SourceRoutingHeader, NodeId};
+use crate::types::source_routing_header::{NodeId, SourceRoutingHeader};
 
 #[derive(Debug)]
 pub struct ServerType {

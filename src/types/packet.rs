@@ -1,4 +1,4 @@
-use crate::types::source_routing_header::{SourceRoutingHeader, NodeId};
+use crate::types::source_routing_header::{NodeId, SourceRoutingHeader};
 
 // Is atomic unit to be sent
 pub struct Packet {
@@ -39,5 +39,3 @@ pub struct FragmentData {
     length: u8,
     data: [u8; 80],
 }
-
-
