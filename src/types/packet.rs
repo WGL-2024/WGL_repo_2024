@@ -1,4 +1,3 @@
-use crate::types::channel::Channel;
 use crate::types::sourceRoutingHeader::{SourceRoutingHeader, NodeId};
 
 // Is atomic unit to be sent
