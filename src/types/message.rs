@@ -1,6 +1,7 @@
 use crate::types::packet::Fragment;
 use crate::types::source_routing_header::{NodeId, SourceRoutingHeader};
 
+// Server is multype (1 or more must be true)
 #[derive(Debug)]
 pub struct ServerType {
     is_chat_server: bool,
