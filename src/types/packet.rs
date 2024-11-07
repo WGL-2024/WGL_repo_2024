@@ -1,5 +1,5 @@
 use crate::types::channel::Channel;
-use crate::types::srh::{SourceRoutingHeader, NodeId};
+use crate::types::sourceRoutingHeader::{SourceRoutingHeader, NodeId};
 
 // Is atomic unit to be sent
 pub struct Packet {
@@ -37,7 +37,7 @@ pub struct Fragment {
 }
 
 pub struct FragmentData {
-    length: u8, //?
+    length: u8,
     data: [u8; 80],
 }
 

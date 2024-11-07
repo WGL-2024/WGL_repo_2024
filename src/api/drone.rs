@@ -3,13 +3,14 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::thread;
 use crate::types::channel::{Channel};
-use crate::types::srh::NodeId;
+use crate::types::sourceRoutingHeader::NodeId;
 
 pub struct Drone{
     id: NodeId,
     thread: Rc<RefCell<thread::JoinHandle<()>>>,
     channels: HashMap<u8, Channel>,
 }
+
 
 trait DroneTrait{
     fn new(drone_id: u8) -> Self;
