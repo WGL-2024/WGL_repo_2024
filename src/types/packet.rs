@@ -12,7 +12,6 @@ pub enum PacketType {
     MsgFragment(Fragment),
     Nack(Nack),
     Ack(Ack),
-    Command(Command),
 }
 
 pub struct Nack {
@@ -29,13 +28,6 @@ pub enum NackType {
 pub struct Ack {
     fragment_index: u64,
     time_received: std::time::Instant,
-}
-
-pub enum Command {
-    NewChannel (Channel),
-    Crash,
-    //Commands called by the Simulation Controller;
-    //Others might and will be added.
 }
 
 pub struct Fragment {
