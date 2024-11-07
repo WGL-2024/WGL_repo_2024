@@ -1,23 +1,16 @@
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::rc::Rc;
 use std::thread;
-use crate::types::channel::{Channel};
-use crate::types::source_routing_header::NodeId;
+use crate::types::channel::{Channel, Channels};
+use crate::types::srh::NodeId;
 
-pub struct Drone{
-    id: NodeId,
-    thread: Rc<RefCell<thread::JoinHandle<()>>>,
-    channels: HashMap<u8, Channel>,
-}
+pub fn new_drone(drone_id: NodeId, channel_sc: Channel) -> thread::JoinHandle<()>{
+    thread::spawn(move || {
+        let id = drone_id;
+        let mut channels = Channels::new();
+        channels.add_channel(0, channel_sc);
+        //ID=0 would be for the Simulation Controller
 
-
-trait DroneTrait{
-    fn new(drone_id: u8) -> Self;
-    // The thread would be created inside here,
-    // giving him reference to the list of channels,
-    // that would be expanded during the creation of the
-    // later drones.
-    fn add_channel(new_channel: Channel) -> Result<String,String>;
-    fn remove_channel(drone_id: u8) -> Result<String,String>;
+        loop{
+            todo!();
+        };
+    })
 }
