@@ -1,14 +1,12 @@
 use crate::types::packet::Fragment;
-use crate::types::NodeId;
-use crate::types::SourceRoutingHeader;
+use crate::types::source_routing_header::{NodeId, SourceRoutingHeader};
 
 // Server is multype (1 or more must be true)
 #[derive(Debug)]
-pub struct ServerType {
-    is_chat_server: bool,
-    // Text support must be true if media support is true
-    is_text_server: bool,
-    is_media_server: bool,
+pub enum ServerType {
+    Chat,
+    Text,
+    Media
 }
 
 #[derive(Debug)]
