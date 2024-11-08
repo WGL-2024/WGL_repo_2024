@@ -6,7 +6,7 @@ use crate::types::source_routing_header::{NodeId, SourceRoutingHeader};
 pub enum ServerType {
     Chat,
     Text,
-    Media
+    Media,
 }
 
 #[derive(Debug)]
