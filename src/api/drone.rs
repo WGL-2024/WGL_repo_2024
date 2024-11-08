@@ -1,12 +1,14 @@
+use std::cell::RefCell;
 use crate::types::channel::Channel;
 use crate::types::NodeId;
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::thread;
 
 pub struct Drone {
     id: NodeId,
     thread: thread::JoinHandle<()>,
-    channels: HashMap<u8, Channel>,
+    channels: Arc<RefCell<HashMap<u8, Channel>>>,
 }
 
 trait DroneTrait {
