@@ -1,6 +1,6 @@
-use std::cell::RefCell;
 use crate::types::channel::Channel;
 use crate::types::NodeId;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::thread;
