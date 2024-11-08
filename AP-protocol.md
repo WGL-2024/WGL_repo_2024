@@ -150,7 +150,7 @@ struct Query {
 	initiator_id: NodeId,
 	/// Time To Live, decremented at each hop to limit the query's lifespan.
 	/// When ttl reaches 0, we start a QueryResult message that reaches back to the initiator
-	ttl: u64,
+	ttl: u8,
 	/// Records the nodes that have been traversed (to track the connections).
 	path_trace: Vec<(u64, NodeType)>
 }
