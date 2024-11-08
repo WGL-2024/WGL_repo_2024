@@ -17,6 +17,6 @@ trait DroneTrait {
     // giving him reference to the list of channels,
     // that would be expanded during the creation of the
     // later drones.
-    fn add_channel(new_channel: Channel) -> Result<String, String>;
-    fn remove_channel(drone_id: u8) -> Result<String, String>;
+    fn add_channel(new_channel: Channel) -> bool;
+    fn remove_channel(drone_id: u8) -> bool;
 }
