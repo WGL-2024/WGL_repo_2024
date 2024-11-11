@@ -375,7 +375,7 @@ Additionally we add an extra piece of logic in the client and server nodes to pr
 
 Clients and servers exchange packets that are routed through the drone network. The Client-Server Protocol standardizes and regulates the format of these packets and their exchange.
 
-These packets can be: Message, Error, Ack, Dropped.
+These packets can be: Message, Ack, Nack, Query, QueryResult.
 
 As described in the main document, Message packets must be serialized and can be possibly fragmented, and the fragments can be possibly dropped by drones.
 
@@ -434,8 +434,8 @@ pub enum MessageContent{
 	// Server -> Client
 	RespServerType(ServerType)
 	RespFilesList(Vec<u64>),
-	RespFile(Vec<u8>),
-	RespMedia(Vec<u8>),
+	RespFile(u64, Vec<u8>),
+	RespMedia(u64, Vec<u8>),
 	ErrUnsupporedRequestType,
 	ErrRequestedNotFound
 
@@ -477,6 +477,8 @@ pub enum NackType{
 
 ### Ack
 
+<mark> What is the point of using ACKs? If a packet is dropped the client gets notified, and the same happens if the drone crashes, making ACKs fundamentally useless. Consider removing them or finding an actual usage </mark>
+
 If a drone receives a Message and can forward it to the next hop, it also sends an Ack to the client.
 
 ```rust
@@ -492,20 +494,26 @@ Source Routing Header contains the path to the client, which can be obtained by 
 
 As described in the main document, messages cannot contain dynamically-sized data structures (that is, **no** `Vec`, **no** `String`, etc). Therefore, packets will contain large, fixed-size arrays instead. (Note that it would be definitely possible to send `Vec`s and `String`s through Rust channels).
 
- In particular, Message packets have the following **limitations**:
-
-- Arrays of up to 5 node_ids, which are used for the lists of node_ids,
-- Arrays of up to 20 `char`, which are used to communicate the `String`s that
+In particular, Message packets have the following **limitation**:
+- Arrays of up to 80 `u8` (aka bytes), which are used to communicate the `String`s that
 constitute files.
 
 ### Fragment reassembly
+
+<mark> 
+Before the change there was no sequence_number. Whilst fragment_index and total_n_fragments inside the MsgFragment(Fragment) allowed to reconstruct a single message, if we had different messages arriving at the same time (if we want to allow that instead of doing 1 to 1 communication), we wouldn't know which way to assemble the fragments in. <br>
+Imagine a server having to send 2 pictures of the same size (so same total_n_fragments) to a client (same session_id). <br>
+How do we know which of the responses the 2/100 fragment_index belongs to? <br>
+Using a sequence_number (or any number for a similar function), would fix this issue. <br>
+</mark>
+
 
 ```rust
 //fragment defined as atomic message exchanged by the drones.
 pub struct Packet {
 	pack_type: PacketType,
 	routing_header: SourceRoutingHeader,
-	session_id: u64
+	session_id: u64,
 }
 
 pub enum PacketType {
@@ -519,11 +527,8 @@ pub enum PacketType {
 // fragment defined as part of a message.
 pub struct Fragment {
 	fragment_index: u64,
-	total_n_fragments: u64
-	data: FragmentData
-}
-
-pub struct FragmentData {
+	total_n_fragments: u64,
+	sequence_number: u128,
 	length: u8,
 	// assembler will fragment/defragment data into bytes.
 	data: [u8; 80] // usable for image with .into_bytes()
