@@ -4,37 +4,86 @@ This document provides the specifications of the communication protocol used by 
 
 This document also establishes some technical requirements of the project.
 
+# Types used in this document
+Can be useful for understanding and for not having to change the underlining type everywhere.
+
+``` Rust
+type NodeId = u64;
+
+```
+
+
 # Network Initializer
 
 The **Network Initializer** reads a local **Network Initialization File** that encodes the network topology and the drone parameters and, accordingly, spawns the node threads and sets up the Rust channels for communicating between nodes.
 
-The Network Initialization File has the following format:
+> Importantly, the Network Initializer should also setup the Rust channels between the nodes and the Simulation Controller (see the Simulation Controller section).
 
-- 10 drone lines: `drone_id connected_drone_count connected_drone_ids packet_drop_rate`.
+## Network Initialization File
+The **Network Initialization File** is in the `.toml` format, and structured as explained below:
 
-    Consider this example line: `d1 3 d3 d4 d5 0.05`. It means that drone `d1` is connected with 3 drones `d3`, `d4` and `d5`, and that its Packet Drop Rate is 0.05 .
+### Drones
+Any number of drones, each formatted as:
+```TOML
+[[drone]]
+id = "drone_id"
+connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
+pdr = "pdr"
+```
+- note that the `pdr` is defined between 0 and 1 (0.05 = 5%).
+- note that `connected_drone_ids` cannot contain `drone_id` nor repetitions
 
-    Note that the PDR is defined between 0 and 1 (0.05 = 5%).
+### Clients
+Any number of clients, each formatted as:
+```TOML
+[[client]]
+id = "client_id"
+connected_drone_ids = ["connected_id1", "..."] # max 2 entries
+```
+- note that `connected_drone_ids` cannot contain `client_id` nor repetitions
+- note that a client cannot connect to other clients or servers
+- note that a client can be connected to at most two drones
 
-    Note that `connected_drone_ids` cannot contain `drone_id` nor repetitions.
+### Servers
+Any number of servers, each formatted as:
+```TOML
+[[server]]
+id = "server_id"
+connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."] # at least 2 entries
+```
+- note that `connected_drone_ids` cannot contain `server_id` nor repetitions
+- note that a server cannot connect to other clients or servers
+- note that a server should be connected to at least two drones
 
-- 2 client lines: `client_id connected_drone_count connected_drone_ids`.
+### Example
+```toml
+[[drone]]
+id = 1
+connected_drone_ids = [2, 3]
+pdr = 0.05
 
-    Consider this example line: `c1 2 d2 d3`. It means that client `c1` is connected with 2 drones `d2` and `d3`.
+[[drone]]
+id = 2
+connected_drone_ids = [1,3,4]
+pdr = 0.03
 
-    Note that `connected_drone_ids` cannot contain `client_id` nor repetitions.
+[[drone]]
+id = 3
+connected_drone_ids = [2,1,4]
+pdr = 0.14
 
-    Note that a client cannot connect to other clients or servers.
+[[client]]
+id = 4
+connected_drone_ids = [3, 2]
 
-- 2 server lines: `server_id connected_drone_count connected_drone_ids`.
+[[client]]
+id = 5
+connected_drone_ids = [1]
 
-    Consider this example line: `s1 2 d4 d5`. It means that server `s1` is connected with 2 drones `d4` and `d5`.
-
-    Note that `connected_drone_ids` cannot contain `server_id` nor repetitions.
-
-    Note that a server cannot connect to other clients or servers.
-
-Importantly, the Network Initializer should also setup the Rust channels between the nodes and the Simulation Controller (see the Simulation Controller section).
+[[server]]
+id = 6
+connected_drone_ids = [2,3]
+```
 
 # Drone parameters: Packet Drop Rate
 
@@ -62,26 +111,20 @@ As an example, consider the following simplified network:
 
 Suppose that the client A wants to send a message to the server D.
 
-It computes the route B→E→F→D, creates a **Source Routing Header** specifying route B→E→F→D with n_hops=5 and hop_index=0, adds it to the packet and sends it to B.
+It computes the route B→E→F→D, creates a **Source Routing Header** specifying route A→B→E→F→D, adds it to the packet and sends it to B.
 
-When B receives the packet, it sees that the next hop is E, increments hop_index by 1 and sends the packet to it.
+When B receives the packet, it sees that the next hop is E and sends the packet to it.
 
-When F receives the packet, it sees that the next hop is F, increments hop_index by 1 and sends the packet to it.
+When E receives the packet, it sees that the next hop is F and sends the packet to it.
 
-When D receives the packet, it sees there are no more hops (as hop_index is equal to n_hops - 1) so it must be the final destination: it can thus process the packet.
+When F receives the packet, it sees that the next hop is D and sends the packet to it.
+
+When D receives the packet, it sees there are no more hops so it must be the final destination: it can thus process the packet.
 
 ```rust
 struct SourceRoutingHeader {
-	/// ID of client or server
-	source_id: &'static str,
-	/// Number of entries in the hops field.
-	/// Must be at least 1.
-	n_hops: usize;
-	/// List of nodes to which to forward the packet.
-	hops: [i64; 4],
-	/// Index of the receiving node in the hops field.
-	/// Ranges from 0 to n_hops - 1.
-	hop_index: u64,
+	/// Vector of nodes with initiator and nodes to which the packet will be forwarded to.
+	hops: Vec<u64>
 }
 ```
 
@@ -98,16 +141,18 @@ To do so, they must use the **Network Discovery Protocol**. The Network Discover
 The client or server that wants to learn the topology, called the **initiator**, starts by flooding a query to all its immediate neighbors:
 
 ```rust
+enum NodeType{Client, Drone, Server}
+
 struct Query {
 	/// Unique identifier of the flood, to prevent loops.
 	flood_id: u64,
 	/// ID of client or server
-	initiator_id: RC<Arc<usize>>,
+	initiator_id: NodeId,
 	/// Time To Live, decremented at each hop to limit the query's lifespan.
+	/// When ttl reaches 0, we start a QueryResult message that reaches back to the initiator
 	ttl: u64,
 	/// Records the nodes that have been traversed (to track the connections).
-	path_trace: [u64; 20]
-	node_types: [NodeType; ]
+	path_trace: Vec<(u64, NodeType)>
 }
 ```
 
@@ -115,9 +160,16 @@ struct Query {
 
 When a neighbor node receives the query, it processes it based on the following rules:
 
-- If the query was received earlier (i.e., the query identifier is already known), the node broadcasts the query to increase the robustness.
-- Otherwise, the node appends its own ID and type (that is, Drone, Client, Server) to the **path trace** and forwards the query to its neighbors (except the one it received the query from).
-- Optionally, the node can return an **acknowledgment** or **path information** directly to the initiator, revealing its connection in the process.
+- If the query was not received earlier, the node forwards the updated message to its neighbours (except the one it received the query from) decreasing the TTL by 1, otherwise set the TTL to 0.
+- If the TTL of the message is 0, build a QueryResult and send it along the same path back to the initiator.
+
+```rust
+struct QueryResult {
+	flood_id: u64,
+	sourceRoutingHeader: SourceRoutingHeader,
+	path_trace: Vec<(u64, NodeType)>
+}
+```
 
 ### **Recording Topology Information**
 
@@ -130,7 +182,6 @@ For every response or acknowledgment the initiator receives, it updates its unde
 
 The flood can terminate when:
 
--
 
 # **Client-Server Protocol: Fragments**
 
@@ -157,141 +208,93 @@ Message is subject to fragmentation: see the dedicated section.
 Message (and Message only) can be dropped by drones.
 
 ```rust
-struct Message{
-	message_header: MessageHeader,
-	/// Shows the type of the message and contains the message.
-	message_content: MessageContent,
-	/// Used and modified by drones to route the packet.
-	source_routing_header: SourceRoutingHeader
+#[derive(Debug)]
+pub enum ServerType{
+	ChatServer, // only does chat
+	TextServer, // only does text
+	MediaServer, // does text and media
+	HybridServer // does all of them
 }
 
-// The serialized and possibly fragmented message sent by
-// either the client or server identified by source_id.
-struct MessageHeader {
-	/// ID of client or server
-	source_id: Option<u64>,
+#[derive(Debug)]
+pub struct Message{
+	message_data: MessageData,
+	routing_header: SourceRoutingHeader
 }
 
-enum MessageContent{
-	ChatMessage(ChatMessage), // chat == communication server
-	TextMessage(TextMessage), // text == content server
-	MediaMessage(MediaMessage)// media == content server
-}
-
-enum ChatMessage{
-	ChatRequest(ChatRequest),
-	ChatResponse(ChatResponse)
-}
-
-enum ChatRequest{ //(chat == communication server)
-	ClientList, // => C -> S : client_list?
-	MessageFor { // => C -> S : message_for?(client_id, message)
-		// note: message_size omitted!
-		client: u64,
-		message: String,
-	},
-}
-
-enum ChatResponse{
-	ClientList(u64, Vec<u64>), //=> S -> C : client_list!(list_length, list_of_client_ids)
-	MessageFrom{ // => S -> C : message_from!(client_id, message)
-		// note: message_size omitted!
-		client: u64,
-		message: String
-	},
-	ErrWrongClient // => S -> C : error_wrong_client_id!
-}
-
-enum TextMessage{// (text == media server with text)
-	TextRequest(TextRequest),
-	TextResponse(TextResponse)
-}
-
-enum TextRequest{
-	ServerType, //C -> S : server_type?
-	FilesList, //C -> S : files_list?
-	File(file_id),// C -> S : file?(file_id)    note: additional params omitted!
-}
-
-enum TextResponse{
-	ServerType(ServerKind), //S -> C : server_type!(type)
-	FilesListResponse { //S -> C : files_list!(list_length, list_of_file_ids)
-		list_length: char,
-		list_of_file_ids: [u64,20],
-	},
-	ErrorNoFiles, // S -> C : error_no_files!
-	File{ //S -> C : file!(file_size, file)
-		file_size: u64,
-		file: String,
-	},
-	ErrorFileNotFound, //S -> C : error_file_not_found!
-}
-
-enum MediaMessage{
-	MediaRequest(MediaRequest),
-	MediaResponse(MediaResponse)
-}
-
-struct MediaRequest{
-	Media{  //C -> S : media?(media_id, +media type+ )
-		media_id: u64
-		///media: media_kind
-	}
-}
-
-enum MediaResponse{
-	MediaResponse { //S -> C : media!(media_size, media, +media type+)
-		media_id: u64,
-		media_size: u64,
-		media: std::fs::File,
-	},
-	ErrorNoMediaResponse,
-	ErrorMediaNotFoundResponse,//S -> C : error_media_not_found!
-}
-```
-
-### Error
-
-If a drone receives a Message and the next hop specified in the Source Routing Header is not a neighbor of the drone, then it sends Error to the client.
-
-This message cannot be dropped by drones due to Packet Drop Rate.
-
-```rust
-struct Error {
+#[derive(Debug)]
+pub struct MessageData { // Only part fragmentized
 	session_id: u64,
-	/// ID of drone, server of client that is not a neighbor:
-	id_not_neighbor: String,
-	ttl: u32,
+	content: MessageContent
 }
 ```
+
+#### Message Types
+```rust
+#[derive(Debug)]
+pub enum MessageContent{
+	// Client -> Server
+	ReqServerType,
+	ReqFilesList,
+	ReqFile(u64),
+	ReqMedia(u64),
+
+	ReqClientList,
+	ReqMessageSend { to: NodeId, message: Vec<u8> },
+	// Do we need request of new messages? or directly sent by server?
+
+	// Server -> Client
+	RespServerType(ServerType)
+	RespFilesList(Vec<u64>),
+	RespFile(Vec<u8>),
+	RespMedia(Vec<u8>),
+	ErrUnsupporedRequestType,
+	ErrRequestedNotFound
+
+	RespClientList(Vec<NodeId>),
+	RespMessageFrom { from: NodeId, message: Vec<u8> },
+	ErrWrongClientId,
+}
+```
+
+Example of new request:
+```rust
+let routing = getRoutingHeader();
+let content = MessageType:ReqFile(8);
+Message::new(routing, source_id, session_id, content)
+```
+
+
+### NACK
+If an error occurs that a NACK is sent. A NACK can be of type:
+1. **ErrorInRouting**: If a drone receives a Message and the next hop specified in the Source Routing Header is not a neighbor of the drone, then it sends Error to the client.
+2. **Dropped**: If a drone receives a Message that must be dropped due to the Packet Drop Probability, then it sends Dropped to the client.
 
 Source Routing Header contains the path to the client, which can be obtained by reversing the list of hops contained in the Source Routing Header of the problematic Message.
 
-### Dropped
-
-If a drone receives a Message that must be dropped due to the Packet Drop Rate, then it sends Dropped twice to the client.
-
-This message cannot be dropped by drones due to Packet Drop Rate.
+This message cannot be dropped by drones due to Packet Drop Probability.
 
 ```rust
-struct Dropped {
-	session_id: u64,
+pub struct Nack{
+	fragment_index: u64,
+	time_of_fail: std::time::Instant,
+	nack_type: NackType
+}
+
+pub enum NackType{
+	ErrorInRouting(NodeId), // contains id of not neighbor
+	Dropped()
 }
 ```
-
-Source Routing Header contains the path to the client, which can be obtained by reversing the list of hops contained in the Source Routing Header of the problematic Message.
 
 ### Ack
 
 If a drone receives a Message and can forward it to the next hop, it also sends an Ack to the client.
 
 ```rust
-pub struct Ack(AckInner);
-
-struct AckInner {
-	session_id: u64,
-	when: std::time::Instant,
-	// Time at which the message was received.
+pub struct Ack{
+	fragment_index: u64,
+	time_received: std::time::Instant
 }
 ```
 
@@ -304,35 +307,30 @@ As described in the main document, Message fragment cannot contain dynamically-s
 ### Fragment reassembly
 
 ```rust
-struct Packet{ //fragment defined as entity exchanged by the drones.
-	pt: PacketType,
-	source_routing_header: SourceRoutingHeader,
+//fragment defined as atomic message exchanged by the drones.
+pub struct Packet {
+	pack_type: PacketType,
+	routing_header: SourceRoutingHeader,
 	session_id: u64
-	//sourcerouting header is inverted if necessary.
 }
 
-enum PacketType {
-	MsgPack(Fragment), ErrorPack(Error), AckPack(Ack), DroppedPack(Dropped)
+pub enum PacketType {
+	MsgFragment(Fragment),
+	Nack(Nack),
+	Ack(Ack)
 }
 
-struct Fragment{ // fragment defined as part of a message.
-	header: FragmentHeader,
-	data: FragmentData,
-}
-
-struct FragmentData{
-	data: [u8; 80], //it's possible to use .into_bytes() so that images
-	//can also be encoded->[u8, 80]
-	length: u8 // assembler will fragment/defragment data into bytes.
-}
-
-pub struct FragmentHeader {
-	/// Identifies the session to which this fragment belongs.
-	session_id: u64,
-	/// Total number of fragments, must be equal or greater than 1.
-	total_n_fragments: u64,
-	/// Index of the packet, from 0 up to total_n_fragments - 1.
+// fragment defined as part of a message.
+pub struct Fragment {
 	fragment_index: u64,
+	total_n_fragments: u64
+	data: FragmentData
+}
+
+pub struct FragmentData {
+	length: u8,
+	// assembler will fragment/defragment data into bytes.
+	data: [u8; 80] // usable for image with .into_bytes()
 }
 ```
 
@@ -406,20 +404,18 @@ Notice that these messages are not subject to the rules of fragmentation, in fac
 - C -> S : server_type?
 - S -> C : server_type!(type)
 - C -> S : files_list?
-- S -> C : files_list!(list_length, list_of_file_ids)
-- S -> C : error_no_files!
-- C -> S : file?(file_id, list_length, list_of_media_ids)
+- S -> C : files_list!(list_of_file_ids)
+- C -> S : file?(file_id)
 - S -> C : file!(file_size, file)
-- S -> C : error_file_not_found!
 - C -> S : media?(media_id)
-- S -> C : media!(media_size, media)
-- S -> C : error_no_media!
-- S -> C : error_media_not_found!
+- S -> C : media!(media)
+- S -> C : error_requested_not_found!
+- S -> C : error_unsupported_request!
 
 ### Chat Messages
 
 - C -> S : client_list?
-- S -> C : client_list!(list_length, list_of_client_ids)
-- C -> S : message_for?(client_id, message_size, message)
-- S -> C : message_from!(client_id, message_size, message)
+- S -> C : client_list!(list_of_client_ids)
+- C -> S : message_for?(client_id, message)
+- S -> C : message_from!(client_id, message)
 - S -> C : error_wrong_client_id!
