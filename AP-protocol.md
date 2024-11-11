@@ -140,6 +140,9 @@ To do so, they must use the **Network Discovery Protocol**. The Network Discover
 
 The client or server that wants to learn the topology, called the **initiator**, starts by flooding a query to all its immediate neighbors:
 
+<mark> Discussion point: Should queries be fragments/packets? If yes then source_routing_header should be removed and both Query and QueryResult needs to be added to the Packet struct. </br>
+Also reminder that Query </mark>
+
 ```rust
 enum NodeType{Client, Drone, Server}
 
@@ -147,28 +150,136 @@ struct Query {
 	/// Unique identifier of the flood, to prevent loops.
 	flood_id: u64,
 	/// ID of client or server
-	initiator_id: NodeId,
+	initiator_id: u64,
 	/// Time To Live, decremented at each hop to limit the query's lifespan.
 	/// When ttl reaches 0, we start a QueryResult message that reaches back to the initiator
 	ttl: u64,
 	/// Records the nodes that have been traversed (to track the connections).
 	path_trace: Vec<(u64, NodeType)>
 }
+
+struct QueryResult {
+	/// Unique indentifier of the flood, this allows the initiator to identify the information obtained by the latest flood only
+	flood_id: u64,
+	/// Record of the nodes traversed by the flooding query
+	path_trace: Vec<(u64, NodeType)>
+}
 ```
 
 ### **Neighbor Response**
 
+Each node stores a hashmap which associates flood_ids to node_ids. This assumes flood_ids are increased incrementally rather than chosen arbitrarily. 
+<mark> flood_id 0 is also reserved for easier computation </mark>
+```rust
+//sample code
+floods_tracker: HashMap<u64, u64>
+// HashMap<K: initiator_id, V: flood_id>
+```
+
 When a neighbor node receives the query, it processes it based on the following rules:
 
-- If the query was not received earlier, the node forwards the updated message to its neighbours (except the one it received the query from) decreasing the TTL by 1, otherwise set the TTL to 0.
-- If the TTL of the message is 0, build a QueryResult and send it along the same path back to the initiator.
+- checks the floods_tracker HashMap for the value stored for the initiator_id. 
+- If there's no value or the value is lower than the flood_id, it means that the current flood is the latest one, so it should be processed accordingly
+	- Processing entails adding the information of the current node into the path_trace, decreasing the TTL by one, and forwarding the query to all neighbors except for the one it received the query from
+- If the value stored is the same as the flood_id, it means the current node has already processed the current flood, so it should be processed as follows
+	- Build a QueryResult with the path_trace information, the path_trace from the initiator_id to the *first* instance of the current node can be reversed and used as the hops inside source_routing_header
+- If the TTL of the message is 0, add the current node's information to the path_trace, then process it like the step right above this one.
 
 ```rust
-struct QueryResult {
-	flood_id: u64,
-	sourceRoutingHeader: SourceRoutingHeader,
-	path_trace: Vec<(u64, NodeType)>
-}
+//sample code
+
+        // packet: Packet
+        // the packet.packet_type was matched for PacketType::Query
+        // query: Query
+
+
+        // push node into path_trace, this assures that every edge can be reconstructed by the initiator node
+        query.path_trace.push((self.id, NodeType::Drone));
+
+        if (query.ttl == 0) {
+
+            let query_result = QueryResult {
+                path_trace: query.path_trace.clone(),
+                flood_id: query.flood_id
+            };
+
+            let return_routing: Vec<u64> = query.path_trace.iter().rev().map(|(node_id, _node_type)| *node_id).collect();
+
+            let packet = Packet {
+                pack_type: PacketType::QueryResult(query_result),
+                routing_header: SourceRoutingHeader {
+                    hops: return_routing.clone()
+                },
+                session_id: 0, // it'll be whatever for now
+            };
+
+            let first_hop_channel = self.neighbors.get(&return_routing[0]).unwrap(); 
+            // unwrap since given the construction of the hops we're guaranteed to not have any errors
+
+            let _ = first_hop_channel.send(packet);
+
+        } else {
+
+            //check if the flood was already managed on this node
+
+            let floodVal = self.floods_tracker.get(&query.initiator_id).or(Some(&0));
+
+            if let Some(&flood_id) = floodVal {
+                if flood_id < query.flood_id {
+                    // this means that the query's flood id is a new flood, thus it needs to be processed
+
+                    query.ttl -= 1;
+
+                    for (neighbor_id, neighbor_channel) in &self.neighbors {
+        
+                        let mut route = packet.routing_header.hops.clone();
+        
+                        route.push(*neighbor_id);
+        
+                        let packet = Packet {
+                            pack_type: PacketType::Query(query.clone()),
+                            routing_header: SourceRoutingHeader {
+                                hops: route
+                            },
+                            session_id: 0, // it'll be whatever for now
+                        };
+                    }
+
+                } else {
+                    //flood's already passed through this node, thus send back a QueryResult
+
+                    let query_result = QueryResult {
+                        path_trace: query.path_trace.clone(),
+                        flood_id: query.flood_id
+                    };
+        
+                    let mut return_routing: Vec<u64> = query.path_trace.iter().map_while(|(node_id, _node_type)| 
+                    if *node_id != self.id {
+                        Some(*node_id)
+                    } else {
+                        None
+                    }).collect();
+
+                    return_routing.reverse();
+        
+                    let packet = Packet {
+                        pack_type: PacketType::QueryResult(query_result),
+                        routing_header: SourceRoutingHeader {
+                            hops: return_routing.clone()
+                        },
+                        session_id: 0, // it'll be whatever for now
+                    };
+        
+                    let first_hop_channel = self.neighbors.get(&return_routing[0]).unwrap(); 
+                    // unwrap since given the construction of the hops we're guaranteed to not have any errors
+        
+                    let _ = first_hop_channel.send(packet);
+
+
+                }
+            }
+        }
+
 ```
 
 ### **Recording Topology Information**
@@ -323,7 +434,9 @@ pub struct Packet {
 pub enum PacketType {
 	MsgFragment(Fragment),
 	Nack(Nack),
-	Ack(Ack)
+	Ack(Ack),
+	Query(Query),
+	QueryResult(QueryResult),
 }
 
 // fragment defined as part of a message.
