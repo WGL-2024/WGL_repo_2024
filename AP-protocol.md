@@ -85,6 +85,105 @@ id = 6
 connected_drone_ids = [2,3]
 ```
 
+### Initialization algorithm
+
+The TOML file just defined is parsed through the code seen in the parser.rs file, which returns a Config object.
+
+```rust 
+struct Config {
+    drone: Vec<Drone>,
+    client: Vec<Client>,
+    server: Vec<Server>,
+}
+```
+
+With this information we need to create all channels and spawn all the threads, an algorithm such as the following can be used
+
+```rust
+/// sample code
+/// only drones are covered here, but clients and servers should be the same
+
+	//store channels
+    let mut packet_channels: Vec<(Sender<Packet>, Receiver<Packet>)> = Vec::new();
+    //simulation controller channel
+    let mut sc_channels: Vec<(Sender<SimulationControllerCommand>, Receiver<SimulationControllerCommand>)> = Vec::new();
+
+    //create 3 different version since we might want the simulation controller channels to depend on node type
+    for _ in config.drone.iter() {
+        //create unbounded channel for drones
+        packet_channels.push(unbounded::<Packet>());
+        sc_channels.push(unbounded::<SimulationControllerCommand>());
+    }
+
+	for drone in config.drone.iter() {
+
+        //clones all the sender channels for the connected drones
+        let sender_channels: Vec<(u64, Sender<Packet>)> = drone.connected_drone_ids.iter().map(|&x| (x, packet_channels[x as usize].0.clone())).collect();
+
+        let packet_receiver = packet_channels[drone.id as usize].1.clone();
+        let command_receiver = sc_channels[drone.id as usize].1.clone();
+
+		// since the thread::spawn function will take ownership of the values, we need to copy or clone them to not have problems with the Vec
+        let drone_id = drone.id;
+
+        let pdr = drone.pdr;
+
+        thread::spawn(move || {
+
+            let mut neighbors_init: HashMap<u64, Sender<Packet>> = HashMap::new();
+
+            for (id, sender) in sender_channels.iter() {
+                neighbors_init.insert(*id, sender.clone());
+            }
+
+            let mut drone = Drone {
+                floods_tracker: HashMap::new(),
+                neighbors: neighbors_init,
+                id: drone_id,
+                packet_rec: packet_receiver,
+                sim_controller_rec: command_receiver,
+                pdr: pdr,
+            };
+
+            //run function is where the logic of the drone runs.
+            drone.run();
+        });
+    }
+```
+
+### Packet Handling
+
+Inside each node the the two receiving channels need to be handled at the same time. This is done using crossbeam's select! macro.
+Here's an example of how this would look inside the Drone::run() function
+
+```rust
+/// sample code
+
+	fn run(&mut self) {
+		//runs forever
+		loop {
+			select! {
+				recv(self.packet_rec) -> packet_res => {
+					if let Ok(packet) = packet_res {
+						// each match branch may call a function to handle it to make it more readable
+						match packet.pack_type {
+							PacketType::Nack(nack) => todo!(),
+							PacketType::Query(query) => todo!(),
+							PacketType::QueryResult(query_result) => todo!(),
+						}
+					}
+				},
+				recv(self.sim_controller_rec) -> command_res => {
+					if let Ok(command) = command_res {
+						//handle the simulation controller's command
+					}
+				}
+			}
+		}
+	}
+```
+
+
 # Drone parameters: Packet Drop Rate
 
 A drone is characterized by a parameter that regulates what to do when a packet is received, that thus influences the simulation. This parameter is provided in the Network Initialization File.
