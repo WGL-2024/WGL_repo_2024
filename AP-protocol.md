@@ -152,35 +152,199 @@ struct Query {
 	/// When ttl reaches 0, we start a QueryResult message that reaches back to the initiator
 	ttl: u8,
 	/// Records the nodes that have been traversed (to track the connections).
-	path_trace: Vec<(u64, NodeType)>
+	path_trace: Vec<(NodeId, NodeType)>,
+	/// Broadcasting query, this means that no QueryResult needs to be sent back
+	broadcasting: bool
+}
+
+struct QueryResult {
+	/// Unique indentifier of the flood, this allows the initiator to identify the information obtained by the latest flood only
+	flood_id: u64,
+	/// Record of the nodes traversed by the flooding query
+	path_trace: Vec<(NodeId, NodeType)>
 }
 ```
 
 ### **Neighbor Response**
 
-When a neighbor node receives the query, it processes it based on the following rules:
-
-- If the query was not received earlier, the node forwards the updated message to its neighbours (except the one it received the query from) decreasing the TTL by 1, otherwise set the TTL to 0.
-- If the TTL of the message is 0, build a QueryResult and send it along the same path back to the initiator.
+Each node stores a HashMap which associates flood_ids to node_ids. This assumes flood_ids are increased incrementally rather than chosen arbitrarily.
+<mark> flood_id 0 is also reserved for easier computation </mark>
 
 ```rust
-struct QueryResult {
-	flood_id: u64,
-	sourceRoutingHeader: SourceRoutingHeader,
-	path_trace: Vec<(u64, NodeType)>
+//sample code
+floods_tracker: HashMap<NodeId, u64>
+// HashMap<K: initiator_id, V: flood_id>
+```
+
+When a neighbor node receives the query, it processes it based on the following rules:
+
+- checks the floods_tracker HashMap for the value stored for the initiator_id.
+- If there's no value or the value is lower than the flood_id, it means that the current flood is the latest one, so it should be processed accordingly
+	- Processing entails adding the information of the current node into the path_trace, decreasing the TTL by one, and forwarding the query to all neighbors except for the one it received the query from
+- If the value stored is the same as the flood_id, it means the current node has already processed the current flood, so it should be processed as follows
+	- Build a QueryResult with the path_trace information, the path_trace from the initiator_id to the *first* instance of the current node can be reversed and used as the hops inside source_routing_header
+- If the TTL of the message is 0, add the current node's information to the path_trace, then process it like the step right above this one.
+
+```rust
+// push node into path_trace, this assures that every edge can be reconstructed by the initiator node
+query.path_trace.push((self.id, NodeType::Drone));
+
+if (query.ttl == 0) {
+
+    //only send back a result if the flooding is not a broadcast
+    if !query.broadcasting {
+        let query_result = QueryResult {
+            path_trace: query.path_trace.clone(),
+            flood_id: query.flood_id
+        };
+
+        let return_routing: Vec<NodeId> = query.path_trace.iter().rev().map(|(node_id, _node_type)| *node_id).collect();
+
+        let packet = Packet {
+            pack_type: PacketType::QueryResult(query_result),
+            routing_header: SourceRoutingHeader {
+                hops: return_routing.clone()
+            },
+            session_id: 0, // it'll be whatever for now
+        };
+
+        let first_hop_channel = self.neighbors.get(&return_routing[0]).unwrap();
+        // unwrap since given the construction of the hops we're guaranteed to not have any errors
+
+        let _ = first_hop_channel.send(packet);
+    }
+
+} else {
+
+    //check if the flood was already managed on this node
+
+    let floodVal = self.floods_tracker.get(&query.initiator_id).or(Some(&0));
+
+    if let Some(&flood_id) = floodVal {
+        if flood_id < query.flood_id {
+            // this means that the query's flood id is a new flood, thus it needs to be processed
+
+            query.ttl -= 1;
+
+            for (neighbor_id, neighbor_channel) in &self.neighbors {
+
+                let mut route = packet.routing_header.hops.clone();
+
+                route.push(*neighbor_id);
+
+                let packet = Packet {
+                    pack_type: PacketType::Query(query.clone()),
+                    routing_header: SourceRoutingHeader {
+                        hops: route
+                    },
+                    session_id: 0, // it'll be whatever for now
+                };
+            }
+
+        } else {
+            //flood's already passed through this node, thus send back a QueryResult
+
+
+            //only send back a result if the flooding is not a broadcast
+            if !query.broadcasting {
+                let query_result = QueryResult {
+                    path_trace: query.path_trace.clone(),
+                    flood_id: query.flood_id
+                };
+
+                let mut return_routing: Vec<NodeId> = query.path_trace.iter().map_while(|(node_id, _node_type)|
+                if *node_id != self.id {
+                    Some(*node_id)
+                } else {
+                    None
+                }).collect();
+
+                return_routing.reverse();
+
+                let packet = Packet {
+                    pack_type: PacketType::QueryResult(query_result),
+                    routing_header: SourceRoutingHeader {
+                        hops: return_routing.clone()
+                    },
+                    session_id: 0, // it'll be whatever for now
+                };
+
+                let first_hop_channel = self.neighbors.get(&return_routing[0]).unwrap();
+                // unwrap since given the construction of the hops we're guaranteed to not have any errors
+
+                let _ = first_hop_channel.send(packet);
+            }
+        }
+    }
 }
+
 ```
 
 ### **Recording Topology Information**
 
-For every response or acknowledgment the initiator receives, it updates its understanding of the graph:
+When the initiator receives a QueryResult, it will update its understanding of the topology through an algorithm.
 
-- If the node receives a response with a **path trace**, it records the paths between nodes. The initiator learns not only the immediate neighbors but also the connections between nodes further out.
-- Over time, as the query continues to flood, the initiator accumulates more information and can eventually reconstruct the entire graph's topology.
+```rust
+//by design the first element always exists
+if path_trace.pop().unwrap().0 == id {
+
+    let mut current_node = id;
+
+    for (node_id, node_type) in path_trace {
+
+        // since we're using a HashSet for both Nodes and Edges, we can insert without worrying about the nodes already existing
+        topology.add_node(*node_id, *node_type);
+        topology.add_edge(current_node, *node_id);
+
+        current_node = *node_id;
+    }
+}
+```
+
+Neighbors will process this struct like a query struct,
 
 ### **Termination Condition**
 
-The flood can terminate when:
+The flood automatically ends once all nodes have propagated the message, or when all Queries have reached their TTL.
+
+<mark> When, apart from initialization, should a flood be run? Periodically or only if a node is unreachable because the topology hasn't had the chance to updated properly yet? Discussion point </mark>
+
+### **Dealing with crashed drones**
+
+When a client receives an Error packet, it is implied that the drone has crashed, thus we can remove it from the client's topology
+
+```rust
+if let NackType::ErrorInRouting(crashed_node_id) = nack.nack_type {
+    topology.remove_drone(crashed_node_id);
+
+    for neighbor_id in topology.adj(crashed_node_id) {
+        topology.remove_edge(crashed_node_id, neighbor_id);
+    }
+
+}
+```
+
+### **Broadcasting new drone spawning**
+
+When the simulation controller adds a new drone, it needs to broadcast its own existence to all the other drones.
+This is done through flooding a query with the broadcast property set to true.
+Additionally, we add an extra piece of logic in the client and server nodes to properly process it
+
+```rust
+let mut path_trace = query.path_trace;
+path_trace.reverse();
+
+let mut current_node = id;
+
+for (node_id, node_type) in path_trace {
+    // since we're using a HashSet for both Nodes and Edges, we can insert without worrying about the nodes already existing
+    topology.add_node(node_id, node_type);
+    topology.add_edge(current_node, node_id);
+
+    current_node = node_id;
+}
+
+```
 
 
 # **Client-Server Protocol: Fragments**
