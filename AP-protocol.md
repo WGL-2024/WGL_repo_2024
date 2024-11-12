@@ -325,11 +325,7 @@ pub enum PacketType {
 // fragment defined as part of a message.
 pub struct Fragment {
 	fragment_index: u64,
-	total_n_fragments: u64
-	data: FragmentData
-}
-
-pub struct FragmentData {
+	total_n_fragments: u64,
 	length: u8,
 	// assembler will fragment/defragment data into bytes.
 	data: [u8; 80] // usable for image with .into_bytes()
