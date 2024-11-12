@@ -213,7 +213,6 @@ pub enum ServerType{
 	ChatServer, // only does chat
 	TextServer, // only does text
 	MediaServer, // does text and media
-	HybridServer // does all of them
 }
 
 #[derive(Debug)]

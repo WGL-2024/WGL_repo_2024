@@ -16,7 +16,13 @@ pub struct Node {
 }
 pub enum NodeType {
     Client(NodeId),
-    MediaServer(NodeId),
-    TextServer(NodeId),
+    Server(ServerType, NodeId),
     Drone(NodeId),
+}
+
+#[derive(Debug)]
+pub enum ServerType {
+    Chat,
+    Text,
+    Media,
 }

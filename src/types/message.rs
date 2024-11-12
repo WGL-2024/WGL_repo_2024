@@ -1,13 +1,6 @@
 use crate::types::packet::Fragment;
 use crate::types::source_routing_header::{NodeId, SourceRoutingHeader};
-
-// Server is multype (1 or more must be true)
-#[derive(Debug)]
-pub enum ServerType {
-    Chat,
-    Text,
-    Media,
-}
+use crate::types::topology::nodes::ServerType;
 
 #[derive(Debug)]
 pub struct Message {
