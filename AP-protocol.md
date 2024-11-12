@@ -118,7 +118,7 @@ With this information we need to create all channels and spawn all the threads, 
 	for drone in config.drone.iter() {
 
         //clones all the sender channels for the connected drones
-        let sender_channels: Vec<(u64, Sender<Packet>)> = drone.connected_drone_ids.iter().map(|&x| (x, packet_channels[x as usize].0.clone())).collect();
+        let sender_channels: Vec<(NodeId, Sender<Packet>)> = drone.connected_drone_ids.iter().map(|&x| (x, packet_channels[x as usize].0.clone())).collect();
 
         let packet_receiver = packet_channels[drone.id as usize].1.clone();
         let command_receiver = sc_channels[drone.id as usize].1.clone();
@@ -130,7 +130,7 @@ With this information we need to create all channels and spawn all the threads, 
 
         thread::spawn(move || {
 
-            let mut neighbors_init: HashMap<u64, Sender<Packet>> = HashMap::new();
+            let mut neighbors_init: HashMap<NodeId, Sender<Packet>> = HashMap::new();
 
             for (id, sender) in sender_channels.iter() {
                 neighbors_init.insert(*id, sender.clone());
@@ -249,12 +249,12 @@ struct Query {
 	/// Unique identifier of the flood, to prevent loops.
 	flood_id: u64,
 	/// ID of client or server
-	initiator_id: u64,
+	initiator_id: NodeId,
 	/// Time To Live, decremented at each hop to limit the query's lifespan.
 	/// When ttl reaches 0, we start a QueryResult message that reaches back to the initiator
 	ttl: u64,
 	/// Records the nodes that have been traversed (to track the connections).
-	path_trace: Vec<(u64, NodeType)>,
+	path_trace: Vec<(NodeId, NodeType)>,
 	/// Broadcasting query, this means that no QueryResult needs to be sent back
 	broadcasting: bool
 }
@@ -263,7 +263,7 @@ struct QueryResult {
 	/// Unique indentifier of the flood, this allows the initiator to identify the information obtained by the latest flood only
 	flood_id: u64,
 	/// Record of the nodes traversed by the flooding query
-	path_trace: Vec<(u64, NodeType)>
+	path_trace: Vec<(NodeId, NodeType)>
 }
 ```
 
@@ -271,9 +271,10 @@ struct QueryResult {
 
 Each node stores a hashmap which associates flood_ids to node_ids. This assumes flood_ids are increased incrementally rather than chosen arbitrarily. 
 <mark> flood_id 0 is also reserved for easier computation </mark>
+
 ```rust
 //sample code
-floods_tracker: HashMap<u64, u64>
+floods_tracker: HashMap<NodeId, u64>
 // HashMap<K: initiator_id, V: flood_id>
 ```
 
@@ -306,7 +307,7 @@ When a neighbor node receives the query, it processes it based on the following 
 				flood_id: query.flood_id
 			};
 
-			let return_routing: Vec<u64> = query.path_trace.iter().rev().map(|(node_id, _node_type)| *node_id).collect();
+			let return_routing: Vec<NodeId> = query.path_trace.iter().rev().map(|(node_id, _node_type)| *node_id).collect();
 
 			let packet = Packet {
 				pack_type: PacketType::QueryResult(query_result),
@@ -360,7 +361,7 @@ When a neighbor node receives the query, it processes it based on the following 
 						flood_id: query.flood_id
 					};
 		
-					let mut return_routing: Vec<u64> = query.path_trace.iter().map_while(|(node_id, _node_type)| 
+					let mut return_routing: Vec<NodeId> = query.path_trace.iter().map_while(|(node_id, _node_type)| 
 					if *node_id != self.id {
 						Some(*node_id)
 					} else {
@@ -394,8 +395,8 @@ When the initiator receives a QueryResult, it will update its understanding of t
 
 ```rust
 /// sample code 
-	// topology: Graph { nodes: HashSet<(u64, NodeType)>, edges: HashSet<(u64, u64)> }
-    // path_trace: Vec<(u64, NodeType)>
+	// topology: Graph { nodes: HashSet<(NodeId, NodeType)>, edges: HashSet<(NodeId, NodeId)> }
+    // path_trace: Vec<(NodeId, NodeType)>
 
     //by design the first element always exists
     if path_trace.pop().unwrap().0 == id {
@@ -627,7 +628,7 @@ pub enum PacketType {
 pub struct Fragment {
 	fragment_index: u64,
 	total_n_fragments: u64,
-	sequence_number: u128,
+	sequence_number: u64,
 	length: u8,
 	// assembler will fragment/defragment data into bytes.
 	data: [u8; 80] // usable for image with .into_bytes()
