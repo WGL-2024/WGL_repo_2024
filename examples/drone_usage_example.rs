@@ -6,7 +6,14 @@ use crossbeam_channel::{select, Receiver, Sender};
 use std::any::Any;
 use std::collections::HashMap;
 
-fn main() {}
+fn main() {
+    //Create some drone
+    // let drone = Drone::new(...);
+
+    //Then start the drone
+    //(not forced to use '.run()', a loop is enough).
+    // drone.run();
+}
 
 impl DroneImplement for Drone {
     fn new(
