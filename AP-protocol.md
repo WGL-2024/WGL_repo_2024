@@ -246,8 +246,8 @@ pub enum MessageContent{
 	// Server -> Client
 	RespServerType(ServerType)
 	RespFilesList(Vec<u64>),
-	RespFile(Vec<u8>),
-	RespMedia(Vec<u8>),
+	RespFile(u64, Vec<u8>),
+	RespMedia(u64, Vec<u8>),
 	ErrUnsupporedRequestType,
 	ErrRequestedNotFound
 
