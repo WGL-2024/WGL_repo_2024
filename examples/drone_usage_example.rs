@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::thread;
 
 fn main() {
-    // something like that will be done
+    // Something like this will be done
     // by the initialization controller
     let handler = thread::spawn(move || {
         let id = 0;
