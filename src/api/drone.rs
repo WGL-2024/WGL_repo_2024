@@ -1,11 +1,11 @@
 use crate::types::command::Command;
+use crate::types::packet::Packet;
 use crate::types::source_routing_header::NodeId;
 use crossbeam_channel::{Receiver, Sender};
-use crate::types::packet::Packet;
 
 // This is a drone of a group
 // Pass to it only what it need to know
-pub trait Drone{
+pub trait Drone {
     fn new(
         id: NodeId,
         sim_contr_send: Sender<Command>,

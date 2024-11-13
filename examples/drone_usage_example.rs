@@ -1,9 +1,9 @@
 //THIS IS JUST AN EXAMPLE OF IMPLEMENTATION
 
 use crate::api::drone::Drone;
+use crate::types::command::Command;
 use crate::types::packet::{Packet, PacketType};
 use crate::types::source_routing_header::NodeId;
-use crate::types::command::Command;
 use crossbeam_channel::{select, Receiver, Sender};
 use std::collections::HashMap;
 use std::thread;
@@ -13,14 +13,14 @@ fn main() {
     // by the initialization controller
     let handler = thread::spawn(move || {
         let id = 0;
-        let drone = Drone::new(id, /*require  other parameter here not given*/);
+        let drone = Drone::new(id /*require  other parameter here not given*/);
 
         drone.run();
     });
 }
 
 // Example of drone implementation
-struct MyDrone{
+struct MyDrone {
     id: NodeId,
     sim_contr_send: Sender<Command>,
     sim_contr_recv: Receiver<Command>,
@@ -52,9 +52,8 @@ impl Drone for MyDrone {
     }
 }
 
-
-impl MyDrone{
-    fn run_internal(&mut self){
+impl MyDrone {
+    fn run_internal(&mut self) {
         loop {
             select! {
                 recv(self.get_packet_receiver()) -> packet_res => {
