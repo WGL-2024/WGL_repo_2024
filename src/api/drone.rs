@@ -13,9 +13,9 @@ pub trait Drone{
         packet_recv: Receiver<Packet>,
         pdr: f32,
     ) -> Self;
+    // The list packet_send would be crated empty inside new.
     // Other nodes are added by sending command
-    // using the simulation control channel to send
-    // Command(AddChannel(...))
+    // using the simulation control channel to send 'Command(AddChannel(...))'.
 
     fn run(&mut self);
 }
