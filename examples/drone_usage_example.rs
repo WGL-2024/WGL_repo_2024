@@ -1,45 +1,60 @@
 //THIS IS JUST AN EXAMPLE OF IMPLEMENTATION
 
-use crate::api::drone::{Drone, DroneImplement};
+use crate::api::drone::Drone;
 use crate::types::packet::{Packet, PacketType};
+use crate::types::source_routing_header::NodeId;
+use crate::types::command::Command;
 use crossbeam_channel::{select, Receiver, Sender};
-use std::any::Any;
 use std::collections::HashMap;
 use std::thread;
 
 fn main() {
+    // something like that will be done
+    // by the initialization controller
     let handler = thread::spawn(move || {
-        //Create some drone
-        // let drone = Drone::new(...);
+        let id = 0;
+        let drone = Drone::new(id, /*require  other parameter here not given*/);
 
-        //Then start the drone
-        //(not forced to use '.run()', a loop is enough).
-        // drone.run();
+        drone.run();
     });
 }
 
-impl DroneImplement for Drone {
+// Example of drone implementation
+struct MyDrone{
+    id: NodeId,
+    sim_contr_send: Sender<Command>,
+    sim_contr_recv: Receiver<Command>,
+    packet_recv: Receiver<Packet>,
+    pdr: u8,
+    packet_send: HashMap<NodeId, Sender<Packet>>,
+}
+
+impl Drone for MyDrone {
     fn new(
         id: NodeId,
-        scs: Sender<Command>,
-        scr: Receiver<Command>,
-        ps: HashMap<NodeId, Sender<Packet>>,
-        pr: Receiver<Packet>,
+        sim_contr_send: Sender<Command>,
+        sim_contr_recv: Receiver<Command>,
+        packet_recv: Receiver<Packet>,
         pdr: f32,
-    ) -> Drone {
-        Drone {
-            drone_id: id,
-            sim_contr_send: scs,
-            sim_contr_recv: scr,
-            packet_send: ps,
-            packet_recv: pr,
+    ) -> Self {
+        Self {
+            id,
+            sim_contr_send,
+            sim_contr_recv,
+            packet_recv,
             pdr: (pdr * 100.0) as u8,
+            packet_send: HashMap::new(),
         }
+    }
+
+    fn run(&mut self) {
+        self.run_internal();
     }
 }
 
-impl Drone {
-    fn run(&mut self) {
+
+impl MyDrone{
+    fn run_internal(&mut self){
         loop {
             select! {
                 recv(self.get_packet_receiver()) -> packet_res => {
@@ -60,7 +75,10 @@ impl Drone {
             }
         }
     }
+
     fn add_channel(&mut self, id: NodeId, sender: Sender<Packet>) {
         self.packet_send.insert(id, sender);
     }
+
+    // fn remove_channel(...) {...}
 }
