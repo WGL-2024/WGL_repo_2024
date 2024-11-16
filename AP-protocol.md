@@ -12,7 +12,6 @@ type NodeId = u64;
 
 ```
 
-
 # Network Initializer
 
 The **Network Initializer** reads a local **Network Initialization File** that encodes the network topology and the drone parameters and, accordingly, spawns the node threads and sets up the Rust channels for communicating between nodes.
@@ -191,15 +190,6 @@ These packets can be: Message, Ack, Nack, Query, QueryResult.
 
 As described in the main document, Message packets must be serialized and can be possibly fragmented, and the fragments can be possibly dropped by drones.
 
-```
-						META-LEVEL COMMENT
-		This section is clearly underspecified, each message
-		should be a struct, with a certain name, and perhaps
-		a fixed API that can be called upon that struct.
-		The WG must also define that API and implement it:
-		that means writing some shared code that all groups
-		will download and execute in order to manage packets.
-```
 
 ### Message
 
@@ -376,13 +366,6 @@ The Simulation Controller can receive the following events from nodes:
 `Topology(node_id, list_of_connected_ids, metadata)`: This event indicates that node `node_id` has been added to the network and its current neighbors are `list_of_connected_ids`. It can carry metadata that could be useful to display, such as the PDR and DR of Drones.
 
 `MessageSent(node_src, node_trg, metadata)`: This event indicates that node `node_src` has sent a message to `node_trg`. It can carry useful metadata that could be useful display, such as the kind of message, that would allow debugging what is going on in the network.
-
-```
-										META-LEVEL COMMENT
-		This section is clearly underspecified: what is the
-		type of `metadata`? It is your duty as WG to define
-		these things.
-```
 
 # **Client-Server Protocol: High-level Messages**
 
