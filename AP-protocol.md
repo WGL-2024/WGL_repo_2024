@@ -188,34 +188,6 @@ pub struct MessageData { // Only part fragmentized
 }
 ```
 
-#### Message Types
-```rust
-#[derive(Debug)]
-pub enum MessageContent{
-	// Client -> Server
-	ReqServerType,
-	ReqFilesList,
-	ReqFile(u64),
-	ReqMedia(u64),
-
-	ReqClientList,
-	ReqMessageSend { to: NodeId, message: Vec<u8> },
-	// Do we need request of new messages? or directly sent by server?
-
-	// Server -> Client
-	RespServerType(ServerType)
-	RespFilesList(Vec<u64>),
-	RespFile(Vec<u8>),
-	RespMedia(Vec<u8>),
-	ErrUnsupporedRequestType,
-	ErrRequestedNotFound
-
-	RespClientList(Vec<NodeId>),
-	RespMessageFrom { from: NodeId, message: Vec<u8> },
-	ErrWrongClientId,
-}
-```
-
 Example of new request:
 ```rust
 let routing = getRoutingHeader();
@@ -349,23 +321,29 @@ contains parameters `params`. Some messages do not provide parameters.
 
 Notice that these messages are not subject to the rules of fragmentation, in fact, they can exchange Strings, Vecs and other dynamically-sized types
 
-### Webserver Messages
+### Message Types (high level messages)
+```rust
+#[derive(Debug)]
+pub enum MessageContent{
+	// Client -> Server
+	ReqServerType,
+	ReqFilesList,
+	ReqFile(u64),
+	ReqMedia(u64),
 
-- C -> S : server_type?
-- S -> C : server_type!(type)
-- C -> S : files_list?
-- S -> C : files_list!(list_of_file_ids)
-- C -> S : file?(file_id)
-- S -> C : file!(file_size, file)
-- C -> S : media?(media_id)
-- S -> C : media!(media)
-- S -> C : error_requested_not_found!
-- S -> C : error_unsupported_request!
+	ReqClientList,
+	ReqMessageSend { to: NodeId, message: Vec<u8> },
 
-### Chat Messages
+	// Server -> Client
+	RespServerType(ServerType)
+	RespFilesList(Vec<u64>),
+	RespFile(Vec<u8>),
+	RespMedia(Vec<u8>),
+	ErrUnsupporedRequestType,
+	ErrRequestedNotFound
 
-- C -> S : client_list?
-- S -> C : client_list!(list_of_client_ids)
-- C -> S : message_for?(client_id, message)
-- S -> C : message_from!(client_id, message)
-- S -> C : error_wrong_client_id!
+	RespClientList(Vec<NodeId>),
+	RespMessageFrom { from: NodeId, message: Vec<u8> },
+	ErrWrongClientId,
+}
+```
