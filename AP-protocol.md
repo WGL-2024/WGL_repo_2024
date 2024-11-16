@@ -124,7 +124,7 @@ When D receives the packet, it sees there are no more hops so it must be the fin
 ```rust
 struct SourceRoutingHeader {
 	/// Vector of nodes with initiator and nodes to which the packet will be forwarded to.
-	hops: Vec<u64>
+	hops: Vec<NodeID>
 }
 ```
 
@@ -282,7 +282,8 @@ pub struct Nack{
 
 pub enum NackType{
 	ErrorInRouting(NodeId), // contains id of not neighbor
-	Dropped()
+	DestinationIsDrone,
+	Dropped
 }
 ```
 
@@ -352,6 +353,24 @@ If the client or server has already received a fragment with the same `session_i
 Once that the client or server has received all fragments (that is, `fragment_index` 0 to `total_n_fragments` -2), then it has reassembled the whole fragment.
 
 Therefore, the packet is now a message that can be delivered.
+
+# Drone Protocol
+When a drone receives a packet, it **must** do the following:
+
+1. find in the `SourceRoutingHeader`, the first occurrence of its `NodeId`
+
+2. check the next `NodeId` in the vector after its own which is the next hop
+
+	* if there is no next `NodeId` create a new packet of type Nack, precisely of type respectively `DestinationIsDrone`. The packet must have the routing made of a vector which is the inverted one from the origin from the drone `NodeId` to the start. Send this packet as a normal packet. End here.
+
+	* if the `NodeId` is not a neighbor, then creates a new packet of type Nack, precisely of type `ErrorInRouting` with field the value of `NodeId` of next hop. Continue as other error.
+
+3. Proceed as follows based on packet type:
+
+	* If the packet is flood related, follow the rules in the flood section
+
+	* Else forward the packet with no modification to the next hops by sending them hover the respective channel.
+
 
 # Simulation Controller
 

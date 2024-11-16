@@ -1,4 +1,6 @@
 pub type NodeId = u8;
 
-// False types to make cargo run happy
-pub type SourceRoutingHeader = [NodeId; 16];
+struct SourceRoutingHeader {
+	/// Initiator and nodes to which the packet will be forwarded to.
+	hops: Vec<NodeID>
+}

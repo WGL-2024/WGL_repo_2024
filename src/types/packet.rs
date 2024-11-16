@@ -19,9 +19,10 @@ pub struct Nack {
     nack_type: NackType,
 }
 
-pub enum NackType {
-    ErrorInRouting(NodeId), // contains id of not neighbor
-    Dropped(),
+pub enum NackType{
+	ErrorInRouting(NodeId), // contains id of not neighbor
+	DestinationIsNotAServer,
+	Dropped
 }
 
 pub struct Ack {
