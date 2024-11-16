@@ -239,6 +239,7 @@ pub enum MessageContent{
 	ReqMedia(u64),
 
 	ReqClientList,
+	ReqRegistrationToChat,
 	ReqMessageSend { to: NodeId, message: Vec<u8> },
 	// Do we need request of new messages? or directly sent by server?
 
@@ -413,6 +414,7 @@ Notice that these messages are not subject to the rules of fragmentation, in fac
 
 ### Chat Messages
 
+- C -> S : registration_to_chat,
 - C -> S : client_list?
 - S -> C : client_list!(list_of_client_ids)
 - C -> S : message_for?(client_id, message)
