@@ -1,5 +1,4 @@
-use crate::types::NodeId;
-use crate::types::SourceRoutingHeader;
+use crate::types::source_routing_header::{NodeId, SourceRoutingHeader};
 
 // Is atomic unit to be sent
 pub struct Packet {

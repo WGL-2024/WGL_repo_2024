@@ -1,4 +1,4 @@
-use crate::types::topology::Node;
+use crate::types::topology::nodes::Node;
 
 pub trait SimulationController {
     fn crash(&mut self, crashed: &str);
