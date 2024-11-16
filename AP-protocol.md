@@ -150,7 +150,7 @@ struct Query {
 	initiator_id: NodeId,
 	/// Time To Live, decremented at each hop to limit the query's lifespan.
 	/// When ttl reaches 0, we start a QueryResult message that reaches back to the initiator
-	ttl: u64,
+	ttl: u8,
 	/// Records the nodes that have been traversed (to track the connections).
 	path_trace: Vec<(u64, NodeType)>
 }
@@ -213,7 +213,6 @@ pub enum ServerType{
 	ChatServer, // only does chat
 	TextServer, // only does text
 	MediaServer, // does text and media
-	HybridServer // does all of them
 }
 
 #[derive(Debug)]
@@ -302,13 +301,7 @@ Source Routing Header contains the path to the client, which can be obtained by 
 
 ### Serialization
 
-As described in the main document, messages cannot contain dynamically-sized data structures (that is, **no** `Vec`, **no** `String`, etc). Therefore, packets will contain large, fixed-size arrays instead. (Note that it would be definitely possible to send `Vec`s and `String`s through Rust channels).
-
- In particular, Message packets have the following **limitations**:
-
-- Arrays of up to 5 node_ids, which are used for the lists of node_ids,
-- Arrays of up to 20 `char`, which are used to communicate the `String`s that
-constitute files.
+As described in the main document, Message fragment cannot contain dynamically-sized data structures (that is, **no** `Vec`, **no** `String`, etc). Therefore, packets will contain large, fixed-size arrays instead.
 
 ### Fragment reassembly
 
@@ -340,26 +333,19 @@ pub struct FragmentData {
 }
 ```
 
-To reassemble fragments into a single packet, a client or server uses the fragment header as follows.
+To reassemble fragments into a single packet, a client or server uses the fragment header as follows:
 
-The client or server receives a fragment.
+1. The client or server receives a fragment.
 
-It first checks the `session_id` in the header.
+2. It first checks the `session_id` in the header.
 
-If it has not received a fragment with the same `session_id`, then it creates a vector big enough where to copy the data of the fragments. Consider, for example, the `FileResponse` fragment:
+3. If it has not received a fragment with the same `session_id`, then it creates a vector big enough where to copy the data of the fragments.
 
-```rust
-FileResponse {
-	file_size: u64,
-	file: [char; 20],
-}
-```
+4. The client would need to create a `vec<u8>` with capacity of `total_n_fragments` * 80.
 
-The client would need to create a vector of type `char` with capacity of `total_n_fragments` * 20.
+5.  It would then copy `file_size` elements of the `file` array at the correct offset in the vector.
 
-It would then copy `file_size` elements of the `file` array at the correct offset in the vector.
-
-Note that, if there are more than one fragment, `file_size` is 20 for all fragments except for the last, as the arrays carry as much data as possible.
+Note that, if there are more than one fragment, `file_size` must be 80 for all fragments except for the last.
 
 If the client or server has already received a fragment with the same `session_id`, then it just needs to copy the data of the fragment in the vector.
 
