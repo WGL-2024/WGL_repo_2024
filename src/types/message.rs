@@ -34,7 +34,6 @@ pub enum MessageContent {
     ReqMedia(u64),
 
     ReqClientList,
-    ReqRegisterInClientList,
     ReqChatMsgSend { to: NodeId, chat_msg: Vec<u8> },
     ReqNewChatMsgs,
 
