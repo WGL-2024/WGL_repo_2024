@@ -54,36 +54,6 @@ connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
 - note that a server cannot connect to other clients or servers
 - note that a server should be connected to at least two drones
 
-### Example
-```toml
-[[drone]]
-id = 1
-connected_drone_ids = [2, 3]
-pdr = 0.05
-
-[[drone]]
-id = 2
-connected_drone_ids = [1,3,4]
-pdr = 0.03
-
-[[drone]]
-id = 3
-connected_drone_ids = [2,1,4]
-pdr = 0.14
-
-[[client]]
-id = 4
-connected_drone_ids = [3, 2]
-
-[[client]]
-id = 5
-connected_drone_ids = [1]
-
-[[server]]
-id = 6
-connected_drone_ids = [2,3]
-```
-
 # Drone parameters: Packet Drop Rate
 
 A drone is characterized by a parameter that regulates what to do when a packet is received, that thus influences the simulation. This parameter is provided in the Network Initialization File.
