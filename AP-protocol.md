@@ -124,7 +124,7 @@ When D receives the packet, it sees there are no more hops so it must be the fin
 ```rust
 struct SourceRoutingHeader {
 	/// Vector of nodes with initiator and nodes to which the packet will be forwarded to.
-	hops: Vec<NodeID>
+	hops: Vec<NodeId>
 }
 ```
 
