@@ -367,9 +367,20 @@ When a drone receives a packet, it **must** do the following:
 
 3. Proceed as follows based on packet type:
 
-	* If the packet is flood related, follow the rules in the flood section
+### Flood Messages
+If the packet is flood related, follow the rules in the flood section.
 
-	* Else forward the packet with no modification to the next hops by sending them hover the respective channel.
+### Normal Messages
+1. check whether to drop or not the package based on the PDR,
+
+2. based on if the packets need to be dropped or not do:
+
+	* If is dropped, send back a Nack Packet with type `Dropped`. Follow the rules for sending errors as before.
+
+	* If it is not dropped, send the packets using the channel relative to the next hops in `SourceRoutingHeader`.
+
+## Simulation
+TODO
 
 
 # Simulation Controller
