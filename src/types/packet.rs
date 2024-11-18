@@ -21,7 +21,7 @@ pub struct Nack {
 
 pub enum NackType {
     ErrorInRouting(NodeId), // contains id of not neighbor
-    DestinationIsNotAServer,
+    DestinationIsDrone,
     Dropped,
 }
 
