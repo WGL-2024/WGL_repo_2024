@@ -1,0 +1,11 @@
+[package]
+name = "internal"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+config = { path = "../config" }
+controller = { path = "../controller" }
+drone = { path = "../drone" }
+network = { path = "../network" }
+packet = { path = "../packet" }
