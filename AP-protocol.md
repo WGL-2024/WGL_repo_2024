@@ -187,7 +187,7 @@ The flood can terminate when:
 
 Clients and servers exchange packets that are routed through the drone network. The Client-Server Protocol standardizes and regulates the format of these packets and their exchange.
 
-These packets can be: Message, Error, Ack, Dropped.
+These packets can be: Message, Ack, Nack, Query, QueryResult.
 
 As described in the main document, Message packets must be serialized and can be possibly fragmented, and the fragments can be possibly dropped by drones.
 
@@ -311,23 +311,21 @@ As described in the main document, Message fragment cannot contain dynamically-s
 pub struct Packet {
 	pack_type: PacketType,
 	routing_header: SourceRoutingHeader,
-	session_id: u64
+	session_id: u64,
 }
 
 pub enum PacketType {
 	MsgFragment(Fragment),
 	Nack(Nack),
-	Ack(Ack)
+	Ack(Ack),
+	Query(Query),
+	QueryResult(QueryResult),
 }
 
 // fragment defined as part of a message.
 pub struct Fragment {
 	fragment_index: u64,
-	total_n_fragments: u64
-	data: FragmentData
-}
-
-pub struct FragmentData {
+	total_n_fragments: u64,
 	length: u8,
 	// assembler will fragment/defragment data into bytes.
 	data: [u8; 80] // usable for image with .into_bytes()
