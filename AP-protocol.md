@@ -76,7 +76,7 @@ The consequence is that drones do not need to maintain routing tables.
 
 As an example, consider the following simplified network:
 
-![constellation](costellation.png)
+![constellation](assets/costellation.png)
 
 Suppose that the client A wants to send a message to the server D.
 
@@ -332,6 +332,7 @@ pub enum MessageContent{
 	ReqMedia(u64),
 
 	ReqClientList,
+  ReqRegistrationToChat,
 	ReqMessageSend { to: NodeId, message: Vec<u8> },
 
 	// Server -> Client
@@ -347,3 +348,4 @@ pub enum MessageContent{
 	ErrWrongClientId,
 }
 ```
+
