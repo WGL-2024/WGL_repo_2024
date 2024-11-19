@@ -12,7 +12,6 @@ type NodeId = u64;
 
 ```
 
-
 # Network Initializer
 
 The **Network Initializer** reads a local **Network Initialization File** that encodes the network topology and the drone parameters and, accordingly, spawns the node threads and sets up the Rust channels for communicating between nodes.
@@ -54,36 +53,6 @@ connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
 - note that `connected_drone_ids` cannot contain `server_id` nor repetitions
 - note that a server cannot connect to other clients or servers
 - note that a server should be connected to at least two drones
-
-### Example
-```toml
-[[drone]]
-id = 1
-connected_drone_ids = [2, 3]
-pdr = 0.05
-
-[[drone]]
-id = 2
-connected_drone_ids = [1,3,4]
-pdr = 0.03
-
-[[drone]]
-id = 3
-connected_drone_ids = [2,1,4]
-pdr = 0.14
-
-[[client]]
-id = 4
-connected_drone_ids = [3, 2]
-
-[[client]]
-id = 5
-connected_drone_ids = [1]
-
-[[server]]
-id = 6
-connected_drone_ids = [2,3]
-```
 
 # Drone parameters: Packet Drop Rate
 
@@ -192,16 +161,6 @@ These packets can be: Message, Ack, Nack, Query, QueryResult.
 
 As described in the main document, Message packets must be serialized and can be possibly fragmented, and the fragments can be possibly dropped by drones.
 
-```
-						META-LEVEL COMMENT
-		This section is clearly underspecified, each message
-		should be a struct, with a certain name, and perhaps
-		a fixed API that can be called upon that struct.
-		The WG must also define that API and implement it:
-		that means writing some shared code that all groups
-		will download and execute in order to manage packets.
-```
-
 ### Message
 
 Message is subject to fragmentation: see the dedicated section.
@@ -228,43 +187,6 @@ pub struct MessageData { // Only part fragmentized
 	content: MessageContent
 }
 ```
-
-#### Message Types
-```rust
-#[derive(Debug)]
-pub enum MessageContent{
-	// Client -> Server
-	ReqServerType,
-	ReqFilesList,
-	ReqFile(u64),
-	ReqMedia(u64),
-
-	ReqClientList,
-	ReqRegistrationToChat,
-	ReqMessageSend { to: NodeId, message: Vec<u8> },
-	// Do we need request of new messages? or directly sent by server?
-
-	// Server -> Client
-	RespServerType(ServerType)
-	RespFilesList(Vec<u64>),
-	RespFile(Vec<u8>),
-	RespMedia(Vec<u8>),
-	ErrUnsupporedRequestType,
-	ErrRequestedNotFound
-
-	RespClientList(Vec<NodeId>),
-	RespMessageFrom { from: NodeId, message: Vec<u8> },
-	ErrWrongClientId,
-}
-```
-
-Example of new request:
-```rust
-let routing = getRoutingHeader();
-let content = MessageType:ReqFile(8);
-Message::new(routing, source_id, session_id, content)
-```
-
 
 ### NACK
 If an error occurs that a NACK is sent. A NACK can be of type:
@@ -419,32 +341,40 @@ The Simulation Controller can receive the following events from nodes:
 
 These are the kinds of high-level messages that we expect can be exchanged between clients and servers.
 
-In the following, we write Protocol messages in this form:
-A -> B : name(params)
-where A and B are network nodes.
-In this case, a message of type `name` is sent from A to B. This message
-contains parameters `params`. Some messages do not provide parameters.
-
 Notice that these messages are not subject to the rules of fragmentation, in fact, they can exchange Strings, Vecs and other dynamically-sized types
 
-### Webserver Messages
+#### Message Types
+```rust
+#[derive(Debug)]
+pub enum MessageContent{
+	// Client -> Server
+	ReqServerType,
+	ReqFilesList,
+	ReqFile(u64),
+	ReqMedia(u64),
 
-- C -> S : server_type?
-- S -> C : server_type!(type)
-- C -> S : files_list?
-- S -> C : files_list!(list_of_file_ids)
-- C -> S : file?(file_id)
-- S -> C : file!(file_size, file)
-- C -> S : media?(media_id)
-- S -> C : media!(media)
-- S -> C : error_requested_not_found!
-- S -> C : error_unsupported_request!
+	ReqClientList,
+	ReqRegistrationToChat,
+	ReqMessageSend { to: NodeId, message: Vec<u8> },
+	// Do we need request of new messages? or directly sent by server?
 
-### Chat Messages
+	// Server -> Client
+	RespServerType(ServerType)
+	RespFilesList(Vec<u64>),
+	RespFile(Vec<u8>),
+	RespMedia(Vec<u8>),
+	ErrUnsupporedRequestType,
+	ErrRequestedNotFound
 
-- C -> S : registration_to_chat,
-- C -> S : client_list?
-- S -> C : client_list!(list_of_client_ids)
-- C -> S : message_for?(client_id, message)
-- S -> C : message_from!(client_id, message)
-- S -> C : error_wrong_client_id!
+	RespClientList(Vec<NodeId>),
+	RespMessageFrom { from: NodeId, message: Vec<u8> },
+	ErrWrongClientId,
+}
+```
+
+Example of new file request, with id = 8:
+```rust
+let routing = getRoutingHeader();
+let content = MessageType:ReqFile(8);
+Message::new(routing, source_id, session_id, content)
+```
