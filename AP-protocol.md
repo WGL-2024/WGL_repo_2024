@@ -330,12 +330,6 @@ The Simulation Controller can receive the following events from nodes:
 
 `MessageSent(node_src, node_trg, metadata)`: This event indicates that node `node_src` has sent a message to `node_trg`. It can carry useful metadata that could be useful display, such as the kind of message, that would allow debugging what is going on in the network.
 
-```
-										META-LEVEL COMMENT
-		This section is clearly underspecified: what is the
-		type of `metadata`? It is your duty as WG to define
-		these things.
-```
 
 # **Client-Server Protocol: High-level Messages**
 
@@ -356,7 +350,6 @@ pub enum MessageContent{
 	ReqClientList,
 	ReqRegistrationToChat,
 	ReqMessageSend { to: NodeId, message: Vec<u8> },
-	// Do we need request of new messages? or directly sent by server?
 
 	// Server -> Client
 	RespServerType(ServerType)
