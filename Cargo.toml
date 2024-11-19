@@ -1,22 +1,6 @@
 [package]
-name = "wgl_2024"
-version = "0.1.0"
+name = "wgl_repo_2024"
 edition = "2021"
 
-[workspace]
-members = ["crates/*"]
-
 [dependencies]
-internal = { path = "crates/internal" }
-
-[dev-dependencies]
-toml = "0.8.19"
 crossbeam-channel = "0.5.13"
-
-[[example]]
-name = "parser"
-path = "examples/config/parser.rs"
-
-[[example]]
-name = "drone_usage"
-path = "examples/drone/drone_usage.rs"
