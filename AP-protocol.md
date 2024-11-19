@@ -123,6 +123,7 @@ When D receives the packet, it sees there are no more hops so it must be the fin
 
 ```rust
 struct SourceRoutingHeader {
+	hop_index: usize, // must be set to 0 initially by the sender
 	/// Vector of nodes with initiator and nodes to which the packet will be forwarded to.
 	hops: Vec<NodeId>
 }
@@ -356,18 +357,17 @@ Therefore, the packet is now a message that can be delivered.
 # Drone Protocol
 When a drone receives a packet, it **must** do the following:
 
-1. find in the `SourceRoutingHeader`, the first occurrence of its `NodeId`
+1. obtain the `hop_index` + 1 element of the `SourceRoutingHeader` vector `hops`, let's call it `next_hop`
+	* It **must ignore** intentionally to check `hop_index`.
 
-2. check the next `NodeId` in the vector after its own which is the next hop
-
-	* if there is no next `NodeId` create a new packet of type Nack, precisely of type respectively `DestinationIsDrone`. The packet must have the routing made of a vector which is the inverted one from the origin from the drone `NodeId` to the start. Send this packet as a normal packet. End here.
-
+2. if `next_hop`
+	* doesn't exist create a new packet of type Nack, precisely of type `DestinationIsDrone`. The packet must have the routing made of a vector but inverted and only contains the nodes from this drone to the sender. Send this packet as a normal packet. End here.
 	* if the `NodeId` is not a neighbor, then creates a new packet of type Nack, precisely of type `ErrorInRouting` with field the value of `NodeId` of next hop. Continue as other error.
 
 3. Proceed as follows based on packet type:
 
 ### Flood Messages
-If the packet is flood related, follow the rules in the flood section.
+TODO  (If the packet is flood related, follow the rules in the flood section)
 
 ### Normal Messages
 1. check whether to drop or not the package based on the PDR,
