@@ -231,7 +231,7 @@ As described in the main document, Message fragment cannot contain dynamically-s
 ### Fragment reassembly
 
 ```rust
-//fragment defined as atomic message exchanged by the drones.
+// defined as atomic message exchanged by the drones.
 pub struct Packet {
 	pack_type: PacketType,
 	routing_header: SourceRoutingHeader,
