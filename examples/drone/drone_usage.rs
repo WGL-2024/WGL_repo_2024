@@ -84,7 +84,7 @@ fn main() {
     //
     // since the config doesn't use NodeId but u64 in this branch, you'll see conversions that won't be needed in the future
     //
-    
+
     for drone in config.drone.iter() {
         //create unbounded channel for drones
         packet_channels.insert(drone.id as NodeId, unbounded::<Packet>());
