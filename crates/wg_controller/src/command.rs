@@ -6,5 +6,5 @@ pub enum Command {
     AddSender(Sender<Packet>, NodeId),
     RemoveChannel(NodeId),
     Crash,
-    SetPacketDropRate(NodeId, u8),
+    SetPacketDropRate(NodeId, f32),
 }
