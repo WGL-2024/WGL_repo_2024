@@ -12,7 +12,6 @@ type NodeId = u64;
 
 ```
 
-
 # Network Initializer
 
 The **Network Initializer** reads a local **Network Initialization File** that encodes the network topology and the drone parameters and, accordingly, spawns the node threads and sets up the Rust channels for communicating between nodes.
@@ -48,42 +47,12 @@ connected_drone_ids = ["connected_id1", "..."] # max 2 entries
 Any number of servers, each formatted as:
 ```TOML
 [[server]]
-id = "server_idear
+id = "server_id"
 connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."] # at least 2 entries
 ```
 - note that `connected_drone_ids` cannot contain `server_id` nor repetitions
 - note that a server cannot connect to other clients or servers
 - note that a server should be connected to at least two drones
-
-### Example
-```toml
-[[drone]]
-id = 1
-connected_drone_ids = [2, 3]
-pdr = 0.05
-
-[[drone]]
-id = 2
-connected_drone_ids = [1,3,4]
-pdr = 0.03
-
-[[drone]]
-id = 3
-connected_drone_ids = [2,1,4]
-pdr = 0.14
-
-[[client]]
-id = 4
-connected_drone_ids = [3, 2]
-
-[[client]]
-id = 5
-connected_drone_ids = [1]
-
-[[server]]
-id = 6
-connected_drone_ids = [2,3]
-```
 
 # Drone parameters: Packet Drop Rate
 
@@ -131,7 +100,7 @@ struct SourceRoutingHeader {
 
 ## Network **Discovery Protocol**
 
-When the network is first initialized, nodes only know who their own neighbors are.
+When the network is first initialized, nodes only know who their own neighbours are.
 
 Clients and servers need to obtain an understanding of the network topology (”what nodes are there in the network and what are their types?”) so that they can compute a route that packets take through the network (refer to the Source routing section for details).
 
@@ -139,18 +108,18 @@ To do so, they must use the **Network Discovery Protocol**. The Network Discover
 
 ### **Flooding Initialization**
 
-The client or server that wants to learn the topology, called the **initiator**, starts by flooding a query request to all its immediate neighbors:
+The client or server that wants to learn the topology, called the **initiator**, starts by flooding a query to all its immediate neighbors:
 
 ```rust
-enum NodeType {Client, Drone, Server}
+enum NodeType{Client, Drone, Server}
 
-struct QueryRequest {
+struct Query {
 	/// Unique identifier of the flood, to prevent loops.
 	flood_id: u64,
 	/// ID of client or server
 	initiator_id: NodeId,
 	/// Time To Live, decremented at each hop to limit the query's lifespan.
-	/// When ttl reaches 0, we start a QueryResponse message that reaches back to the initiator
+	/// When ttl reaches 0, we start a QueryResult message that reaches back to the initiator
 	ttl: u8,
 	/// Records the nodes that have been traversed (to track the connections).
 	path_trace: Vec<(u64, NodeType)>
@@ -161,13 +130,13 @@ struct QueryRequest {
 
 When a neighbor node receives the query, it processes it based on the following rules:
 
-- If the query was not received earlier, the node forwards the updated message to its neighbors (except the one it received the query from) decreasing the TTL by 1, otherwise set the TTL to 0.
-- If the TTL of the message is 0, build a `QueryResponse` and send it along the same path back to the initiator.
+- If the query was not received earlier, the node forwards the updated message to its neighbours (except the one it received the query from) decreasing the TTL by 1, otherwise set the TTL to 0.
+- If the TTL of the message is 0, build a QueryResult and send it along the same path back to the initiator.
 
 ```rust
-struct QueryResponse {
+struct QueryResult {
 	flood_id: u64,
-	routing_header: SourceRoutingHeader,
+	sourceRoutingHeader: SourceRoutingHeader,
 	path_trace: Vec<(u64, NodeType)>
 }
 ```
@@ -186,38 +155,28 @@ The flood can terminate when:
 
 # **Client-Server Protocol: Fragments**
 
-Clients and servers operate with high-level messages but in the end they exchange packets which are atomic pieces of information routed through the drone network. The Client-Server Protocol standardizes and regulates the format of these messages and their exchange.
+Clients and servers exchange packets that are routed through the drone network. The Client-Server Protocol standardizes and regulates the format of these packets and their exchange.
 
-The previously mentioned packets exchanged in the network can be: Fragment, Ack, Nack, QueryRequest, QueryResponse.
+These packets can be: Message, Ack, Nack, Query, QueryResult.
 
 As described in the main document, Message packets must be serialized and can be possibly fragmented, and the fragments can be possibly dropped by drones.
-
-```
-						META-LEVEL COMMENT
-		This section is clearly underspecified, each message
-		should be a struct, with a certain name, and perhaps
-		a fixed API that can be called upon that struct.
-		The WG must also define that API and implement it:
-		that means writing some shared code that all groups
-		will download and execute in order to manage packets.
-```
 
 ### Message
 
 Message is subject to fragmentation: see the dedicated section.
 
-Fragments (and Fragments only) can be dropped by drones.
+Message (and Message only) can be dropped by drones.
 
 ```rust
 #[derive(Debug)]
-pub enum ServerType {
+pub enum ServerType{
 	ChatServer, // only does chat
 	TextServer, // only does text
 	MediaServer, // does text and media
 }
 
 #[derive(Debug)]
-pub struct Message {
+pub struct Message{
 	message_data: MessageData,
 	routing_header: SourceRoutingHeader
 }
@@ -229,75 +188,37 @@ pub struct MessageData { // Only part fragmentized
 }
 ```
 
-#### Message Types
-
-```rust
-#[derive(Debug)]
-pub enum MessageContent {
-	// Client -> Server
-	ReqServerType,
-	ReqFilesList,
-	ReqFile(u64),
-	ReqMedia(u64),
-
-	ReqClientList,
-	ReqRegistrationToChat,
-	ReqMessageSend { to: NodeId, message: Vec<u8> },
-	// Do we need request of new messages? or directly sent by server?
-
-	// Server -> Client
-	RespServerType(ServerType)
-	RespFilesList(Vec<u64>),
-	RespFile(Vec<u8>),
-	RespMedia(Vec<u8>),
-	ErrUnsupporedRequestType,
-	ErrRequestedNotFound
-
-	RespClientList(Vec<NodeId>),
-	RespMessageFrom { from: NodeId, message: Vec<u8> },
-	ErrWrongClientId,
-}
-```
-
-Example of new request:
-```rust
-let routing = getRoutingHeader();
-let content = MessageType:ReqFile(8);
-Message::new(routing, source_id, session_id, content)
-```
-
-### Ack
-
-If a drone receives a Message and can forward it to the next hop, it sends an Ack to the client.
-
-```rust
-pub struct Ack {
-	fragment_index: u64,
-	time_received: std::time::Instant
-}
-```
-
-### Nack
-
-If an error occurs then a Nack is sent. A Nack can be of type:
+### NACK
+If an error occurs that a NACK is sent. A NACK can be of type:
 1. **ErrorInRouting**: If a drone receives a Message and the next hop specified in the Source Routing Header is not a neighbor of the drone, then it sends Error to the client.
-2. **Dropped**: If a drone receives a Fragment that must be dropped due to the Packet Drop Rate, then it sends Dropped to the client.
+2. **Dropped**: If a drone receives a Message that must be dropped due to the Packet Drop Probability, then it sends Dropped to the client.
 
 Source Routing Header contains the path to the client, which can be obtained by reversing the list of hops contained in the Source Routing Header of the problematic Message.
 
-This packet cannot be dropped by drones due to Packet Drop Rate.
+This message cannot be dropped by drones due to Packet Drop Probability.
 
 ```rust
-pub struct Nack {
+pub struct Nack{
 	fragment_index: u64,
 	time_of_fail: std::time::Instant,
 	nack_type: NackType
 }
 
-pub enum NackType {
+pub enum NackType{
 	ErrorInRouting(NodeId), // contains id of not neighbor
 	DestinationIsDrone,
 	Dropped
+}
+```
+
+### Ack
+
+If a drone receives a Message and can forward it to the next hop, it also sends an Ack to the client.
+
+```rust
+pub struct Ack{
+	fragment_index: u64,
+	time_received: std::time::Instant
 }
 ```
 
@@ -310,7 +231,7 @@ As described in the main document, Message fragment cannot contain dynamically-s
 ### Fragment reassembly
 
 ```rust
-//fragment defined as atomic message exchanged by the drones.
+// defined as atomic message exchanged by the drones.
 pub struct Packet {
 	pack_type: PacketType,
 	routing_header: SourceRoutingHeader,
@@ -319,10 +240,10 @@ pub struct Packet {
 
 pub enum PacketType {
 	MsgFragment(Fragment),
-	Ack(Ack),
 	Nack(Nack),
-	QueryRequest(QueryRequest),
-	QueryResponse(QueryResponse),
+	Ack(Ack),
+	Query(Query),
+	QueryResult(QueryResult),
 }
 
 // fragment defined as part of a message.
@@ -343,7 +264,7 @@ To reassemble fragments into a single packet, a client or server uses the fragme
 
 3. If it has not received a fragment with the same `session_id`, then it creates a vector big enough where to copy the data of the fragments.
 
-4. The client would need to create a `Vec<u8>` with capacity of `total_n_fragments` * 80.
+4. The client would need to create a `vec<u8>` with capacity of `total_n_fragments` * 80.
 
 5.  It would then copy `file_size` elements of the `file` array at the correct offset in the vector.
 
@@ -351,31 +272,32 @@ Note that, if there are more than one fragment, `file_size` must be 80 for all f
 
 If the client or server has already received a fragment with the same `session_id`, then it just needs to copy the data of the fragment in the vector.
 
-Once the client or server has received all fragments (that is, `fragment_index` 0 to `total_n_fragments` - 1), it can then reassemble the whole message.
+Once that the client or server has received all fragments (that is, `fragment_index` 0 to `total_n_fragments` -2), then it has reassembled the whole fragment.
 
 Therefore, the packet is now a message that can be delivered.
 
 # Drone Protocol
 When a drone receives a packet, it **must** do the following:
 
-1. obtain the `hop_index` + 1 element of the `SourceRoutingHeader` vector `hops`, let's call it `next_hop`
+1. increase `hop_index` by 1
+2. obtain the (new `hop_index`) + 1 element of the `SourceRoutingHeader` vector `hops`, let's call it `next_hop`
 	* It **must ignore** intentionally to check `hop_index`.
 
-2. if `next_hop`
+3. if `next_hop`
 	* doesn't exist create a new packet of type Nack, precisely of type `DestinationIsDrone`. The packet must have the routing made of a vector but inverted and only contains the nodes from this drone to the sender. Send this packet as a normal packet. End here.
 	* if the `NodeId` is not a neighbor, then creates a new packet of type Nack, precisely of type `ErrorInRouting` with field the value of `NodeId` of next hop. Continue as other error.
 
-3. Proceed as follows based on packet type:
+4. Proceed as follows based on packet type:
 
 ### Flood Messages
 TODO  (If the packet is flood related, follow the rules in the flood section)
 
 ### Normal Messages
-1. check whether to drop or not the packet based on the PDR,
+1. check whether to drop or not the package based on the PDR,
 
 2. based on if the packets need to be dropped or not do:
 
-	* If is dropped, send back a Nack packet with type `Dropped`. Follow the rules for sending errors as before.
+	* If is dropped, send back a Nack Packet with type `Dropped`. Follow the rules for sending errors as before.
 
 	* If it is not dropped, send the packets using the channel relative to the next hops in `SourceRoutingHeader`.
 
@@ -409,43 +331,44 @@ The Simulation Controller can receive the following events from nodes:
 
 `MessageSent(node_src, node_trg, metadata)`: This event indicates that node `node_src` has sent a message to `node_trg`. It can carry useful metadata that could be useful display, such as the kind of message, that would allow debugging what is going on in the network.
 
-```
-										META-LEVEL COMMENT
-		This section is clearly underspecified: what is the
-		type of `metadata`? It is your duty as WG to define
-		these things.
-```
 
 # **Client-Server Protocol: High-level Messages**
 
 These are the kinds of high-level messages that we expect can be exchanged between clients and servers.
 
-In the following, we write Protocol messages in this form:
-A -> B : name(params)
-where A and B are network nodes.
-In this case, a message of type `name` is sent from A to B. This message
-contains parameters `params`. Some messages do not provide parameters.
-
 Notice that these messages are not subject to the rules of fragmentation, in fact, they can exchange Strings, Vecs and other dynamically-sized types
 
-### Webserver Messages
+#### Message Types
+```rust
+#[derive(Debug)]
+pub enum MessageContent{
+	// Client -> Server
+	ReqServerType,
+	ReqFilesList,
+	ReqFile(u64),
+	ReqMedia(u64),
 
-- C -> S : server_type?
-- S -> C : server_type!(type)
-- C -> S : files_list?
-- S -> C : files_list!(list_of_file_ids)
-- C -> S : file?(file_id)
-- S -> C : file!(file_size, file)
-- C -> S : media?(media_id)
-- S -> C : media!(media)
-- S -> C : error_requested_not_found!
-- S -> C : error_unsupported_request!
+	ReqClientList,
+	ReqRegistrationToChat,
+	ReqMessageSend { to: NodeId, message: Vec<u8> },
 
-### Chat Messages
+	// Server -> Client
+	RespServerType(ServerType)
+	RespFilesList(Vec<u64>),
+	RespFile(Vec<u8>),
+	RespMedia(Vec<u8>),
+	ErrUnsupporedRequestType,
+	ErrRequestedNotFound
 
-- C -> S : registration_to_chat,
-- C -> S : client_list?
-- S -> C : client_list!(list_of_client_ids)
-- C -> S : message_for?(client_id, message)
-- S -> C : message_from!(client_id, message)
-- S -> C : error_wrong_client_id!
+	RespClientList(Vec<NodeId>),
+	RespMessageFrom { from: NodeId, message: Vec<u8> },
+	ErrWrongClientId,
+}
+```
+
+Example of new file request, with id = 8:
+```rust
+let routing = getRoutingHeader();
+let content = MessageType:ReqFile(8);
+Message::new(routing, source_id, session_id, content)
+```
