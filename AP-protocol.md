@@ -48,7 +48,7 @@ connected_drone_ids = ["connected_id1", "..."] # max 2 entries
 Any number of servers, each formatted as:
 ```TOML
 [[server]]
-id = "server_id"
+id = "server_idear
 connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."] # at least 2 entries
 ```
 - note that `connected_drone_ids` cannot contain `server_id` nor repetitions
