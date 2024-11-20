@@ -11,8 +11,8 @@ pub enum PacketType {
     MsgFragment(Fragment),
     Nack(Nack),
     Ack(Ack),
-	Query(Query),
-	QueryResult(QueryResult),
+    Query(Query),
+    QueryResult(QueryResult),
 }
 
 pub struct Nack {
@@ -33,21 +33,21 @@ pub struct Ack {
 }
 
 pub struct Query {
-	/// Unique identifier of the flood, to prevent loops.
-	flood_id: u64,
-	/// ID of client or server
-	initiator_id: NodeId,
-	/// Time To Live, decremented at each hop to limit the query's lifespan.
-	/// When ttl reaches 0, we start a QueryResult message that reaches back to the initiator
-	ttl: u8,
-	/// Records the nodes that have been traversed (to track the connections).
-	path_trace: Vec<(NodeId, NodeType)>
+    /// Unique identifier of the flood, to prevent loops.
+    flood_id: u64,
+    /// ID of client or server
+    initiator_id: NodeId,
+    /// Time To Live, decremented at each hop to limit the query's lifespan.
+    /// When ttl reaches 0, we start a QueryResult message that reaches back to the initiator
+    ttl: u8,
+    /// Records the nodes that have been traversed (to track the connections).
+    path_trace: Vec<(NodeId, NodeType)>,
 }
 
 pub struct QueryResult {
-	flood_id: u64,
-	source_routing_header: SourceRoutingHeader,
-	path_trace: Vec<(NodeId, NodeType)>
+    flood_id: u64,
+    source_routing_header: SourceRoutingHeader,
+    path_trace: Vec<(NodeId, NodeType)>,
 }
 
 pub struct Fragment {
