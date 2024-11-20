@@ -1,0 +1,26 @@
+[package]
+name = "wg_2024"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+members = ["crates/*"]
+
+[dependencies]
+wg_internal = { path = "crates/wg_internal" }
+
+[dev-dependencies]
+toml = "0.8.19"
+crossbeam-channel = "0.5.13"
+
+[features]
+serialize = ["wg_internal/serialize"]
+
+[[example]]
+name = "parser"
+path = "examples/config/parser.rs"
+required-features = ["serialize"]
+
+[[example]]
+name = "drone_usage"
+path = "examples/drone/drone_usage.rs"

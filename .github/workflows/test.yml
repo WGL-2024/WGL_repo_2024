@@ -1,0 +1,11 @@
+name: CargoTest
+on: [pull_request]
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test src/ --no-fail-fast --color always

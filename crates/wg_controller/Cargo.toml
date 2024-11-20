@@ -1,0 +1,9 @@
+[package]
+name = "wg_controller"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+crossbeam-channel = "0.5.13"
+wg_packet = { path = "../wg_packet" }
+wg_network = { path = "../wg_network" }

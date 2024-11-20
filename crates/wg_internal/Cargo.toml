@@ -1,0 +1,14 @@
+[package]
+name = "wg_internal"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+wg_config = { path = "../wg_config" }
+wg_controller = { path = "../wg_controller" }
+wg_drone = { path = "../wg_drone" }
+wg_network = { path = "../wg_network" }
+wg_packet = { path = "../wg_packet" }
+
+[features]
+serialize = ["wg_config/serialize"]

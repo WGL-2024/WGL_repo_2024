@@ -1,0 +1,10 @@
+[package]
+name = "wg_drone"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+wg_network = { path = "../wg_network" }
+wg_packet = { path = "../wg_packet" }
+wg_controller = { path = "../wg_controller" }
+crossbeam-channel = "0.5.13"
