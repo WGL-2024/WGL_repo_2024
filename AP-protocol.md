@@ -60,6 +60,8 @@ A drone is characterized by a parameter that regulates what to do when a packet 
 
 Packet Drop Rate: The drone drops the received packet with probability equal to the Packet Drop Rate.
 
+The PDR can be up to 100%, and the routing algorithm of every group should find a way to eventually work around this.
+
 # Messages and fragments
 
 Recall that there are: Content servers (that is, Text and Media servers) and Communication servers. These servers are used by clients to implement applications.
