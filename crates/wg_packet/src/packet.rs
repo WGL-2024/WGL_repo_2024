@@ -34,20 +34,20 @@ pub struct Ack {
 
 pub struct Query {
     /// Unique identifier of the flood, to prevent loops.
-    flood_id: u64,
+    pub flood_id: u64,
     /// ID of client or server
-    initiator_id: NodeId,
+    pub initiator_id: NodeId,
     /// Time To Live, decremented at each hop to limit the query's lifespan.
     /// When ttl reaches 0, we start a QueryResult message that reaches back to the initiator
-    ttl: u8,
+    pub ttl: u8,
     /// Records the nodes that have been traversed (to track the connections).
-    path_trace: Vec<(NodeId, NodeType)>,
+    pub path_trace: Vec<(NodeId, NodeType)>,
 }
 
 pub struct QueryResult {
-    flood_id: u64,
-    source_routing_header: SourceRoutingHeader,
-    path_trace: Vec<(NodeId, NodeType)>,
+    pub flood_id: u64,
+    pub source_routing_header: SourceRoutingHeader,
+    pub path_trace: Vec<(NodeId, NodeType)>,
 }
 
 pub struct Fragment {
