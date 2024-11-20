@@ -10,5 +10,7 @@ pub enum Command {
     //These are messages sent back to the sim controller.
     //The channel uses the same enum.
     Topology(NodeId, my_pdr: f32, nghb: HashMap<NodeId>),
-    MessageSent(src: NodeId, trg: NodeId, msg: Message)
+    MessageSent(src: NodeId, trg: NodeId, msg: Message),
+    MessageDropped(src: NodeId, my_pdr: f32, trg: NodeID, msg: Message),
+    Error(src: NodeId, trg: NodeId, msg: Message)
 }
