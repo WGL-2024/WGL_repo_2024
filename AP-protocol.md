@@ -131,7 +131,7 @@ struct SourceRoutingHeader {
 
 ## Network **Discovery Protocol**
 
-When the network is first initialized, nodes only know who their own neighbours are.
+When the network is first initialized, nodes only know who their own neighbors are.
 
 Clients and servers need to obtain an understanding of the network topology (”what nodes are there in the network and what are their types?”) so that they can compute a route that packets take through the network (refer to the Source routing section for details).
 
@@ -139,18 +139,18 @@ To do so, they must use the **Network Discovery Protocol**. The Network Discover
 
 ### **Flooding Initialization**
 
-The client or server that wants to learn the topology, called the **initiator**, starts by flooding a query to all its immediate neighbors:
+The client or server that wants to learn the topology, called the **initiator**, starts by flooding a query request to all its immediate neighbors:
 
 ```rust
-enum NodeType{Client, Drone, Server}
+enum NodeType {Client, Drone, Server}
 
-struct Query {
+struct QueryRequest {
 	/// Unique identifier of the flood, to prevent loops.
 	flood_id: u64,
 	/// ID of client or server
 	initiator_id: NodeId,
 	/// Time To Live, decremented at each hop to limit the query's lifespan.
-	/// When ttl reaches 0, we start a QueryResult message that reaches back to the initiator
+	/// When ttl reaches 0, we start a QueryResponse message that reaches back to the initiator
 	ttl: u8,
 	/// Records the nodes that have been traversed (to track the connections).
 	path_trace: Vec<(u64, NodeType)>
@@ -161,13 +161,13 @@ struct Query {
 
 When a neighbor node receives the query, it processes it based on the following rules:
 
-- If the query was not received earlier, the node forwards the updated message to its neighbours (except the one it received the query from) decreasing the TTL by 1, otherwise set the TTL to 0.
-- If the TTL of the message is 0, build a QueryResult and send it along the same path back to the initiator.
+- If the query was not received earlier, the node forwards the updated message to its neighbors (except the one it received the query from) decreasing the TTL by 1, otherwise set the TTL to 0.
+- If the TTL of the message is 0, build a `QueryResponse` and send it along the same path back to the initiator.
 
 ```rust
-struct QueryResult {
+struct QueryResponse {
 	flood_id: u64,
-	sourceRoutingHeader: SourceRoutingHeader,
+	routing_header: SourceRoutingHeader,
 	path_trace: Vec<(u64, NodeType)>
 }
 ```
@@ -186,9 +186,9 @@ The flood can terminate when:
 
 # **Client-Server Protocol: Fragments**
 
-Clients and servers exchange packets that are routed through the drone network. The Client-Server Protocol standardizes and regulates the format of these packets and their exchange.
+Clients and servers operate with high-level messages but in the end they exchange packets which are atomic pieces of information routed through the drone network. The Client-Server Protocol standardizes and regulates the format of these messages and their exchange.
 
-These packets can be: Message, Ack, Nack, Query, QueryResult.
+The previously mentioned packets exchanged in the network can be: Fragment, Ack, Nack, QueryRequest, QueryResponse.
 
 As described in the main document, Message packets must be serialized and can be possibly fragmented, and the fragments can be possibly dropped by drones.
 
@@ -206,18 +206,18 @@ As described in the main document, Message packets must be serialized and can be
 
 Message is subject to fragmentation: see the dedicated section.
 
-Message (and Message only) can be dropped by drones.
+Fragments (and Fragments only) can be dropped by drones.
 
 ```rust
 #[derive(Debug)]
-pub enum ServerType{
+pub enum ServerType {
 	ChatServer, // only does chat
 	TextServer, // only does text
 	MediaServer, // does text and media
 }
 
 #[derive(Debug)]
-pub struct Message{
+pub struct Message {
 	message_data: MessageData,
 	routing_header: SourceRoutingHeader
 }
@@ -230,9 +230,10 @@ pub struct MessageData { // Only part fragmentized
 ```
 
 #### Message Types
+
 ```rust
 #[derive(Debug)]
-pub enum MessageContent{
+pub enum MessageContent {
 	// Client -> Server
 	ReqServerType,
 	ReqFilesList,
@@ -265,38 +266,38 @@ let content = MessageType:ReqFile(8);
 Message::new(routing, source_id, session_id, content)
 ```
 
+### Ack
 
-### NACK
-If an error occurs that a NACK is sent. A NACK can be of type:
+If a drone receives a Message and can forward it to the next hop, it sends an Ack to the client.
+
+```rust
+pub struct Ack {
+	fragment_index: u64,
+	time_received: std::time::Instant
+}
+```
+
+### Nack
+
+If an error occurs then a Nack is sent. A Nack can be of type:
 1. **ErrorInRouting**: If a drone receives a Message and the next hop specified in the Source Routing Header is not a neighbor of the drone, then it sends Error to the client.
-2. **Dropped**: If a drone receives a Message that must be dropped due to the Packet Drop Probability, then it sends Dropped to the client.
+2. **Dropped**: If a drone receives a Fragment that must be dropped due to the Packet Drop Rate, then it sends Dropped to the client.
 
 Source Routing Header contains the path to the client, which can be obtained by reversing the list of hops contained in the Source Routing Header of the problematic Message.
 
-This message cannot be dropped by drones due to Packet Drop Probability.
+This packet cannot be dropped by drones due to Packet Drop Rate.
 
 ```rust
-pub struct Nack{
+pub struct Nack {
 	fragment_index: u64,
 	time_of_fail: std::time::Instant,
 	nack_type: NackType
 }
 
-pub enum NackType{
+pub enum NackType {
 	ErrorInRouting(NodeId), // contains id of not neighbor
 	DestinationIsDrone,
 	Dropped
-}
-```
-
-### Ack
-
-If a drone receives a Message and can forward it to the next hop, it also sends an Ack to the client.
-
-```rust
-pub struct Ack{
-	fragment_index: u64,
-	time_received: std::time::Instant
 }
 ```
 
@@ -318,10 +319,10 @@ pub struct Packet {
 
 pub enum PacketType {
 	MsgFragment(Fragment),
-	Nack(Nack),
 	Ack(Ack),
-	Query(Query),
-	QueryResult(QueryResult),
+	Nack(Nack),
+	QueryRequest(QueryRequest),
+	QueryResponse(QueryResponse),
 }
 
 // fragment defined as part of a message.
@@ -342,7 +343,7 @@ To reassemble fragments into a single packet, a client or server uses the fragme
 
 3. If it has not received a fragment with the same `session_id`, then it creates a vector big enough where to copy the data of the fragments.
 
-4. The client would need to create a `vec<u8>` with capacity of `total_n_fragments` * 80.
+4. The client would need to create a `Vec<u8>` with capacity of `total_n_fragments` * 80.
 
 5.  It would then copy `file_size` elements of the `file` array at the correct offset in the vector.
 
@@ -350,7 +351,7 @@ Note that, if there are more than one fragment, `file_size` must be 80 for all f
 
 If the client or server has already received a fragment with the same `session_id`, then it just needs to copy the data of the fragment in the vector.
 
-Once that the client or server has received all fragments (that is, `fragment_index` 0 to `total_n_fragments` -2), then it has reassembled the whole fragment.
+Once the client or server has received all fragments (that is, `fragment_index` 0 to `total_n_fragments` - 1), it can then reassemble the whole message.
 
 Therefore, the packet is now a message that can be delivered.
 
@@ -370,11 +371,11 @@ When a drone receives a packet, it **must** do the following:
 TODO  (If the packet is flood related, follow the rules in the flood section)
 
 ### Normal Messages
-1. check whether to drop or not the package based on the PDR,
+1. check whether to drop or not the packet based on the PDR,
 
 2. based on if the packets need to be dropped or not do:
 
-	* If is dropped, send back a Nack Packet with type `Dropped`. Follow the rules for sending errors as before.
+	* If is dropped, send back a Nack packet with type `Dropped`. Follow the rules for sending errors as before.
 
 	* If it is not dropped, send the packets using the channel relative to the next hops in `SourceRoutingHeader`.
 
