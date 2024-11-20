@@ -41,7 +41,7 @@ connected_drone_ids = ["connected_id1", "..."] # max 2 entries
 ```
 - note that `connected_drone_ids` cannot contain `client_id` nor repetitions
 - note that a client cannot connect to other clients or servers
-- note that a client can be connected to at most two drones
+- note that a client can be connected to at least one drone and at most two drones
 
 ### Servers
 Any number of servers, each formatted as:
@@ -113,13 +113,13 @@ The client or server that wants to learn the topology, called the **initiator**,
 ```rust
 enum NodeType {Client, Drone, Server}
 
-struct QueryRequest {
+struct FloodRequest {
 	/// Unique identifier of the flood, to prevent loops.
 	flood_id: u64,
 	/// ID of client or server
 	initiator_id: NodeId,
 	/// Time To Live, decremented at each hop to limit the query's lifespan.
-	/// When ttl reaches 0, we start a QueryResponse message that reaches back to the initiator
+	/// When ttl reaches 0, we start a FloodResponse message that reaches back to the initiator
 	ttl: u8,
 	/// Records the nodes that have been traversed (to track the connections).
 	path_trace: Vec<(u64, NodeType)>
@@ -131,10 +131,10 @@ struct QueryRequest {
 When a neighbor node receives the query request, it processes it based on the following rules:
 
 - If the query request was not received earlier, the node forwards the updated packet to its neighbors (except the one it received the query request from) decreasing the TTL by 1, otherwise set the TTL to 0.
-- If the TTL of the message is 0, build a QueryResponse and send it along the same path back to the initiator.
+- If the TTL of the message is 0, build a `FloodResponse` and send it along the same path back to the initiator.
 
 ```rust
-struct QueryResponse {
+struct FloodResponse {
 	flood_id: u64,
 	routing_header: SourceRoutingHeader,
 	path_trace: Vec<(u64, NodeType)>
@@ -157,7 +157,7 @@ The flood can terminate when:
 
 Clients and servers operate with high level `Message`s which are disassembled into atomically sized packets that are routed through the drone network. The Client-Server Protocol standardizes and regulates the format of these messages and their exchange.
 
-The previously mentioned packets can be: Fragment, Ack, Nack, QueryRequest, QueryResponse.
+The previously mentioned packets can be: Fragment, Ack, Nack, FloodRequest, FloodResponse.
 
 As described in the main document, `Message`s must be serialized and can be possibly fragmented, and the fragments can be possibly dropped by drones.
 
@@ -242,8 +242,8 @@ pub enum PacketType {
 	MsgFragment(Fragment),
 	Ack(Ack),
 	Nack(Nack),
-	QueryRequest(QueryRequest),
-	QueryResponse(QueryResponse),
+	FloodRequest(FloodRequest),
+	FloodResponse(FloodResponse),
 }
 
 // fragment defined as part of a message.
