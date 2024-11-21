@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 serde = { version = "1.0.215", features = ["derive"], optional = true }
+wg_network = { path = "../wg_network" }
 
 [features]
 serialize = ["dep:serde"]

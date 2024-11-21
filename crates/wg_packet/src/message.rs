@@ -2,21 +2,21 @@ use crate::packet::Fragment;
 use wg_network::topology::ServerType;
 use wg_network::{NodeId, SourceRoutingHeader};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Message {
     pub message_data: MessageData,
     pub routing_header: SourceRoutingHeader,
 }
 
 // Only part fragmentized
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MessageData {
     pub source_id: NodeId,
     pub session_id: u64,
     pub content: MessageContent,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum MessageContent {
     // Client -> Server
     ReqServerType,
