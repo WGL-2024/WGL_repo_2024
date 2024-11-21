@@ -46,7 +46,9 @@ impl MyDrone {
             match packet.pack_type {
                             PacketType::Nack(_nack) => unimplemented!(),
                             PacketType::Ack(_ack) => unimplemented!(),
-                            PacketType::MsgFragment(_fragment) => unimplemented!()
+                            PacketType::MsgFragment(_fragment) => unimplemented!(),
+                            PacketType::Flood(_) => unimplemented!(),
+                            PacketType::FloodResult(_) => unimplemented!(),
                         }
                     }
                 },

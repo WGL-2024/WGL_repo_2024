@@ -3,6 +3,7 @@ use wg_controller::Command;
 use wg_network::NodeId;
 use wg_packet::Packet;
 
+#[derive(Debug, Clone)]
 pub struct DroneOptions {
     pub id: NodeId,
     pub sim_contr_send: Sender<Command>,
