@@ -66,38 +66,114 @@ Recall that there are: Content servers (that is, Text and Media servers) and Com
 
 These servers exchange, respectively, Text server messages, Media server messages and Communication server messages. These are high-level messages. Recall that you must standardize and regulate their low-level counterparts (that is, fragments).
 
-# Source routing
+# Source Routing Protocol
 
 The fragments that circulate in the network are **source-routed** (except for the commands sent from and the events received by the Simulation Controller).
 
-Source routing refers to a technique where the sender of a data packet specifies the route the packet takes through the network. This is in contrast with conventional routing, where routers in the network determine the path incrementally based on the packet's destination.
+The **Source Routing Protocol** is a technique where the sender of a data packet specifies the entire route the packet should take through the network. This contrasts with conventional routing, where each node decides the next hop based on the packet's destination. In this network, drones do not maintain routing tables because the path is predefined by the sender.
 
-The consequence is that drones do not need to maintain routing tables.
+### How Source Routing Works
 
-As an example, consider the following simplified network:
+When a client or server wants to send a message to another node, it performs the following steps:
+
+1. **Route Computation**: The sender calculates the entire path to the destination node. This path includes the sender itself and all intermediate nodes leading to the destination.
+
+2. **Creation of the Source Routing Header**: The sender constructs a header that contains:
+	- **`hops`**: A list of node IDs representing the route from the sender to the destination.
+	- **`hop_index`**: An index indicating the current position in the `hops` list. It starts at **1** because the first hop (`hops[0]`) is the sender itself.
+
+3. **Packet Sending**: The sender attaches the source routing header to the packet and sends it to the first node in the route (the node at `hops[1]`).
+
+### Step-by-Step Example
+
+Consider the following simplified network topology:
 
 ![constellation](assets/costellation.png)
 
-Suppose that the client A wants to send a message to the server D.
+Suppose that client A wants to send a message to server D.
 
-It computes the route B→E→F→D, creates a **Source Routing Header** specifying route A→B→E→F→D, adds it to the packet and sends it to B.
+**Client A**:
 
-When B receives the packet, it sees that the next hop is E and sends the packet to it.
+- Computes the route: **A → B → E → F → D**.
+- Creates a source routing header:
+	- **`hops`**: `[A, B, E, F, D]`.
+	- **`hop_index`**: `1`.
+- Sends the packet to **B**, the first node after itself.
 
-When E receives the packet, it sees that the next hop is F and sends the packet to it.
+**At Each Node**:
 
-When F receives the packet, it sees that the next hop is D and sends the packet to it.
+- **Receiving the Packet**:
+	- The node receives the packet and checks if it is the intended recipient by comparing its own ID with `hops[hop_index]`.
+		- **If they match**, the node proceeds.
+		- **If they do not match**, the node identifies a routing error and sends back a **Nack** (Negative Acknowledgment) with an `ErrorInRouting` indicating the node ID where the error occurred.
+- **Processing the Packet**:
+	- Increments `hop_index` by **1** to move to the next hop.
+	- Determines the next hop using the updated `hop_index`.
+	- Sends the packet to the next hop.
 
-When D receives the packet, it sees there are no more hops so it must be the final destination: it can thus process the packet.
+**Detailed Steps**:
 
+1. **Node B**:
+	- Receives the packet with `hop_index = 1`.
+	- Checks: `hops[1] = B` matches its own ID.
+	- Increments `hop_index` to `2`.
+	- Next hop is `hops[2] = E`.
+	- Sends the packet to **E**.
+
+2. **Node E**:
+	- Receives the packet with `hop_index = 2`.
+	- Checks: `hops[2] = E` matches its own ID.
+	- Increments `hop_index` to `3`.
+	- Next hop is `hops[3] = F`.
+	- Sends the packet to **F**.
+
+3. **Node F**:
+	- Receives the packet with `hop_index = 3`.
+	- Checks: `hops[3] = F` matches its own ID.
+	- Increments `hop_index` to `4`.
+	- Next hop is `hops[4] = D`.
+	- Sends the packet to **D**.
+
+4. **Node D**:
+	- Receives the packet with `hop_index = 4`.
+	- Checks: `hops[4] = D` matches its own ID.
+	- Increments `hop_index` to `5`.
+	- Since `hop_index` equals the length of `hops`, there are no more hops.
+	- Concludes it is the **final destination** and processes the packet.
+
+### Summary of the Source Routing Protocol Steps
+
+1. Initialization:
+	- Sender sets `hop_index` to **1**.
+	- Constructs `hops` list including the sender and all intermediate nodes to the destination.
+
+2. At Each Node:
+	- **Step 1**: Check if `hops[hop_index]` matches the node's own ID.
+		- **If yes**, proceed to Step 2.
+		- **If no**, send a Nack with `ErrorInRouting` and terminate processing.
+	- **Step 2**: Increment `hop_index` by **1**.
+	- **Step 3**: Determine if the node is the final destination:
+		- **If `hop_index` equals the length of `hops`**, the node is the final destination and processes the packet.
+		- **If not**, proceed to Step 4.
+	- **Step 4**: Identify the next hop using `hops[hop_index]`.
+		- **If the next hop is not a neighbor**, send a Nack with `ErrorInRouting` indicating the problematic node ID.
+		- **If the next hop is a neighbor**, send the packet to the next hop.
+
+3. Final Destination:
+	- The node processes the packet as it has reached its intended recipient.
+
+	
 ```rust
 struct SourceRoutingHeader {
-	// must be set to 0 initially by the sender
+	// must be set to 1 initially by the sender
 	hop_index: usize,
 	// Vector of nodes with initiator and nodes to which the packet will be forwarded to.
 	hops: Vec<NodeId>
 }
 ```
+
+#### Notes
+- **Flood Messages**: Flood requests and responses used in network discovery follow different rules and are handled as specified in the Network Discovery Protocol section.
 
 ## Network **Discovery Protocol**
 
