@@ -84,6 +84,28 @@ When a client or server wants to send a message to another node, it performs the
 
 3. **Packet Sending**: The sender attaches the source routing header to the packet and sends it to the first node in the route (the node at `hops[1]`).
 
+
+### Source Routing Protocol Steps
+
+1. Initialization:
+	- Sender sets `hop_index` to **1**.
+	- Constructs `hops` list including the sender and all intermediate nodes to the destination.
+
+2. At Each Node:
+	- **Step 1**: Check if `hops[hop_index]` matches the node's own ID.
+		- **If yes**, proceed to Step 2.
+		- **If no**, send a Nack with `ErrorInRouting` and terminate processing.
+	- **Step 2**: Increment `hop_index` by **1**.
+	- **Step 3**: Determine if the node is the final destination:
+		- **If `hop_index` equals the length of `hops`**, the node is the final destination and processes the packet.
+		- **If not**, proceed to Step 4.
+	- **Step 4**: Identify the next hop using `hops[hop_index]`.
+		- **If the next hop is not a neighbor**, send a Nack with `ErrorInRouting` indicating the problematic node ID.
+		- **If the next hop is a neighbor**, send the packet to the next hop.
+
+3. Final Destination:
+	- The node processes the packet as it has reached its intended recipient.
+
 ### Step-by-Step Example
 
 Consider the following simplified network topology:
@@ -99,17 +121,6 @@ Suppose that client A wants to send a message to server D.
 	- **`hops`**: `[A, B, E, F, D]`.
 	- **`hop_index`**: `1`.
 - Sends the packet to **B**, the first node after itself.
-
-**At Each Node**:
-
-- **Receiving the Packet**:
-	- The node receives the packet and checks if it is the intended recipient by comparing its own ID with `hops[hop_index]`.
-		- **If they match**, the node proceeds.
-		- **If they do not match**, the node identifies a routing error and sends back a **Nack** (Negative Acknowledgment) with an `ErrorInRouting` indicating the node ID where the error occurred.
-- **Processing the Packet**:
-	- Increments `hop_index` by **1** to move to the next hop.
-	- Determines the next hop using the updated `hop_index`.
-	- Sends the packet to the next hop.
 
 **Detailed Steps**:
 
@@ -140,27 +151,6 @@ Suppose that client A wants to send a message to server D.
 	- Increments `hop_index` to `5`.
 	- Since `hop_index` equals the length of `hops`, there are no more hops.
 	- Concludes it is the **final destination** and processes the packet.
-
-### Summary of the Source Routing Protocol Steps
-
-1. Initialization:
-	- Sender sets `hop_index` to **1**.
-	- Constructs `hops` list including the sender and all intermediate nodes to the destination.
-
-2. At Each Node:
-	- **Step 1**: Check if `hops[hop_index]` matches the node's own ID.
-		- **If yes**, proceed to Step 2.
-		- **If no**, send a Nack with `ErrorInRouting` and terminate processing.
-	- **Step 2**: Increment `hop_index` by **1**.
-	- **Step 3**: Determine if the node is the final destination:
-		- **If `hop_index` equals the length of `hops`**, the node is the final destination and processes the packet.
-		- **If not**, proceed to Step 4.
-	- **Step 4**: Identify the next hop using `hops[hop_index]`.
-		- **If the next hop is not a neighbor**, send a Nack with `ErrorInRouting` indicating the problematic node ID.
-		- **If the next hop is a neighbor**, send the packet to the next hop.
-
-3. Final Destination:
-	- The node processes the packet as it has reached its intended recipient.
 
 	
 ```rust
