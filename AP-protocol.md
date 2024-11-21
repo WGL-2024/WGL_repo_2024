@@ -92,8 +92,9 @@ When D receives the packet, it sees there are no more hops so it must be the fin
 
 ```rust
 struct SourceRoutingHeader {
-	hop_index: usize, // must be set to 0 initially by the sender
-	/// Vector of nodes with initiator and nodes to which the packet will be forwarded to.
+	// must be set to 0 initially by the sender
+	hop_index: usize,
+	// Vector of nodes with initiator and nodes to which the packet will be forwarded to.
 	hops: Vec<NodeId>
 }
 ```
@@ -102,7 +103,7 @@ struct SourceRoutingHeader {
 
 When the network is first initialized, nodes only know who their own neighbors are.
 
-Clients and servers need to obtain an understanding of the network topology (”what nodes are there in the network and what are their types?”) so that they can compute a route that packets take through the network (refer to the Source routing section for details).
+Clients and servers need to obtain an understanding of the network topology ("what nodes are there in the network and what are their types?") so that they can compute a route that packets take through the network (refer to the Source routing section for details).
 
 To do so, they must use the **Network Discovery Protocol**. The Network Discovery Protocol is initiated by clients and servers and works through query flooding.
 
@@ -128,9 +129,9 @@ struct FloodRequest {
 
 ### **Neighbor Response**
 
-When a neighbor node receives the query request, it processes it based on the following rules:
+When a neighbor node receives the flood request, it processes it based on the following rules:
 
-- If the query request was not received earlier, the node forwards the updated packet to its neighbors (except the one it received the query request from) decreasing the TTL by 1, otherwise set the TTL to 0.
+- If the flood request was not received earlier, the node forwards the updated packet to its neighbors (except the one it received the flood request from) decreasing the TTL by 1, otherwise set the TTL to 0.
 - If the TTL of the message is 0, build a `FloodResponse` and send it along the same path back to the initiator.
 
 ```rust
@@ -143,9 +144,9 @@ struct FloodResponse {
 
 ### **Recording Topology Information**
 
-For every response or acknowledgment the initiator receives, it updates its understanding of the graph:
+For every flood response or acknowledgment the initiator receives, it updates its understanding of the graph:
 
-- If the node receives a response with a **path trace**, it records the paths between nodes. The initiator learns not only the immediate neighbors but also the connections between nodes further out.
+- If the node receives a flood response with a **path trace**, it records the paths between nodes. The initiator learns not only the immediate neighbors but also the connections between nodes further out.
 - Over time, as the query continues to flood, the initiator accumulates more information and can eventually reconstruct the entire graph's topology.
 
 ### **Termination Condition**
@@ -159,13 +160,13 @@ Clients and servers operate with high level `Message`s which are disassembled in
 
 The previously mentioned packets can be: Fragment, Ack, Nack, FloodRequest, FloodResponse.
 
-As described in the main document, `Message`s must be serialized and can be possibly fragmented, and the fragments can be possibly dropped by drones.
+As described in the main document, `Message`s must be serialized and can be possibly fragmented, and the `Fragment`s can be possibly dropped by drones.
 
 ### Message
 
-Message is subject to fragmentation: see the dedicated section.
+`Message` is subject to fragmentation: see the dedicated section.
 
-Fragment (and Fragment only) can be dropped by drones.
+`Fragment` (and `Fragment` only) can be dropped by drones.
 
 ```rust
 #[derive(Debug)]
@@ -182,7 +183,7 @@ pub struct Message {
 }
 
 #[derive(Debug)]
-pub struct MessageData { // Only part fragmentized
+pub struct MessageData { // Only part fragmented
 	session_id: u64,
 	content: MessageContent
 }
