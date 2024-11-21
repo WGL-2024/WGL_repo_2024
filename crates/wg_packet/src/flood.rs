@@ -8,7 +8,7 @@ pub enum NodeType {
 }
 
 #[derive(Debug, Clone)]
-pub struct Query {
+pub struct FloodRequest {
     pub flood_id: u64,
     pub initiator_id: NodeId,
     pub ttl: u8,
@@ -16,7 +16,7 @@ pub struct Query {
 }
 
 #[derive(Debug, Clone)]
-pub struct QueryResult {
+pub struct FloodResponse {
     pub flood_id: u64,
     pub source_routing_header: SourceRoutingHeader,
     pub path_trace: Vec<(NodeId, NodeType)>,

@@ -47,8 +47,8 @@ impl MyDrone {
                             PacketType::Nack(_nack) => unimplemented!(),
                             PacketType::Ack(_ack) => unimplemented!(),
                             PacketType::MsgFragment(_fragment) => unimplemented!(),
-                            PacketType::Flood(_) => unimplemented!(),
-                            PacketType::FloodResult(_) => unimplemented!(),
+                            PacketType::FloodRequest(_) => unimplemented!(),
+                            PacketType::FloodResponse(_) => unimplemented!(),
                         }
                     }
                 },
