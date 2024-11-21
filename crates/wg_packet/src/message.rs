@@ -1,69 +1,127 @@
-use crate::packet::Fragment;
-use wg_network::topology::ServerType;
 use wg_network::{NodeId, SourceRoutingHeader};
 
 #[derive(Debug, Clone)]
-pub struct Message {
-    pub message_data: MessageData,
+pub struct Message<M: MessageContent> {
+    pub message_data: MessageData<M>,
     pub routing_header: SourceRoutingHeader,
 }
 
 // Only part fragmentized
 #[derive(Debug, Clone)]
-pub struct MessageData {
+pub struct MessageData<M: MessageContent> {
     pub source_id: NodeId,
     pub session_id: u64,
-    pub content: MessageContent,
+    pub content: M,
+}
+
+pub trait MessageContent {
+    fn serialize(&self) -> String;
+    fn deserialize(serialized: String) -> Result<Self, String>
+    where
+        Self: Sized;
+}
+
+// ReqServerType,
+#[derive(Debug, Clone)]
+pub enum TextRequest {
+    FileList,
+    File(u64),
+}
+
+impl MessageContent for TextRequest {
+    fn serialize(&self) -> String {
+        match self {
+            TextRequest::FileList => "FileList".to_string(),
+            TextRequest::File(id) => format!("File({})", id),
+        }
+    }
+
+    fn deserialize(serialized: String) -> Result<Self, String> {
+        if serialized == "FileList" {
+            Ok(TextRequest::FileList)
+        } else if let Ok(id) = serialized
+            .trim_start_matches("File(")
+            .trim_end_matches(')')
+            .parse()
+        {
+            Ok(TextRequest::File(id))
+        } else {
+            Err("Failed to deserialize TextRequest".to_string())
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
-pub enum MessageContent {
-    // Client -> Server
-    ReqServerType,
-    ReqFilesList,
-    ReqFile(u64),
-    ReqMedia(u64),
-
-    ReqClientList,
-    ReqRegistrationToChat,
-    ReqMessageSend { to: NodeId, message: Vec<u8> },
-
-    // Server -> Client
-    RespServerType(ServerType),
-    RespFilesList(Vec<u64>),
-    RespFile(Vec<u8>),
-    RespMedia(Vec<u8>),
-    ErrUnsupporedRequestType,
-    ErrRequestedNotFound,
-
-    RespClientList(Vec<NodeId>),
-    RespMessageFrom { from: NodeId, message: Vec<u8> },
-    ErrWrongClientId,
+pub enum MediaRequest {
+    Media(u64),
 }
 
-impl Message {
-    // takes message and returns the data struct serialized in a String
-    // so it goes from the actual data struct to a String
-    #[allow(unused_variables)]
-    pub fn serialize(&self) -> String {
-        unimplemented!()
+impl MessageContent for MediaRequest {
+    fn serialize(&self) -> String {
+        todo!()
     }
-
-    // takes the content String and makes an instance of Message from it
-    #[allow(unused_variables)]
-    pub fn deserialize(serialized: String) -> Message {
-        unimplemented!()
+    fn deserialize(_: String) -> Result<Self, String> {
+        todo!()
     }
+}
 
-    // takes the String and splits it into Fragments
-    #[allow(unused_variables)]
-    pub fn disassembly(serialized: String) -> Vec<Fragment> {
-        unimplemented!()
+#[derive(Debug, Clone)]
+pub enum ChatRequest {
+    ClientList,
+    Register(NodeId),
+    SendMessage { to: NodeId, message: String },
+}
+
+impl MessageContent for ChatRequest {
+    fn serialize(&self) -> String {
+        todo!()
     }
+    fn deserialize(_: String) -> Result<Self, String> {
+        todo!()
+    }
+}
 
-    // takes a bunch of Fragments and composes them in a serialized string.
-    #[allow(unused_variables)]
-    pub fn assembly(fragments: Vec<Fragment>) -> String {
-        unimplemented!()
+#[derive(Debug, Clone)]
+pub enum FileResponse {
+    FileList(Vec<u64>),
+    File(String),
+    NotFound,
+}
+
+impl MessageContent for FileResponse {
+    fn serialize(&self) -> String {
+        todo!()
+    }
+    fn deserialize(_: String) -> Result<Self, String> {
+        todo!()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum MediaResponse {
+    Media(Vec<u8>), // should we use some other type?
+}
+
+impl MessageContent for MediaResponse {
+    fn serialize(&self) -> String {
+        todo!()
+    }
+    fn deserialize(_: String) -> Result<Self, String> {
+        todo!()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum ChatResponse {
+    RespClientList(Vec<NodeId>),
+    RespMessageFrom { from: NodeId, message: Vec<u8> },
+}
+
+impl MessageContent for ChatResponse {
+    fn serialize(&self) -> String {
+        todo!()
+    }
+    fn deserialize(_: String) -> Result<Self, String> {
+        todo!()
     }
 }
