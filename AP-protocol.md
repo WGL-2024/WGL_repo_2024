@@ -119,9 +119,6 @@ struct FloodRequest {
 	flood_id: u64,
 	/// ID of client or server
 	initiator_id: NodeId,
-	/// Time To Live, decremented at each hop to limit the query's lifespan.
-	/// When ttl reaches 0, we start a FloodResponse message that reaches back to the initiator
-	ttl: u8,
 	/// Records the nodes that have been traversed (to track the connections).
 	path_trace: Vec<(NodeId, NodeType)>
 }
@@ -130,21 +127,32 @@ struct FloodRequest {
 ### **Neighbor Response**
 
 When a neighbor node receives the flood request, it processes it based on the following rules:
+- If the flood ID has already been received:
+	- The drone adds itself to the `path_trace`.
+	- The drone creates a `FloodResponse` and sends it back.
 
-- If the flood request was not received earlier, the node forwards the updated packet to its neighbors (except the one it received the flood request from) decreasing the TTL by 1, otherwise set the TTL to 0.
-- If the TTL of the message is 0, build a `FloodResponse` and send it along the same path back to the initiator.
+- If the flood ID has not yet been received:
+	- The drone adds itself to the `path_trace`.
+	- **If it has neighbors** (excluding the one from which it received the `FloodRequest`):
+		- The drone forwards the packet to its neighbors (except the one from which it received the `FloodRequest`).
+	- **If it has no neighbors**, then:
+		- The drone creates a `FloodResponse` and sends it to the node from which it received the `FloodRequest`.
 
 ```rust
 struct FloodResponse {
 	flood_id: u64,
-	source_routing_header: SourceRoutingHeader,
 	path_trace: Vec<(NodeId, NodeType)>
 }
 ```
 
+#### Notes:
+- For the discovery protocol, `Packet`s of type `FloodRequest` and `FloodResponse` will be sent.
+- The `routing_header` of `Packet`s of type `FloodRequest` will be ignored (as the Packet is sent to all neighbors except the one from which it was received).
+- The `routing_header` of `Packet`s of type `FloodResponse`, on the other hand, determines the packet's path.
+
 ### **Recording Topology Information**
 
-For every flood response or acknowledgment the initiator receives, it updates its understanding of the graph:
+For every flood response the initiator receives, it updates its understanding of the graph:
 
 - If the node receives a flood response with a **path trace**, it records the paths between nodes. The initiator learns not only the immediate neighbors but also the connections between nodes further out.
 - Over time, as the query continues to flood, the initiator accumulates more information and can eventually reconstruct the entire graph's topology.
@@ -152,6 +160,8 @@ For every flood response or acknowledgment the initiator receives, it updates it
 ### **Termination Condition**
 
 The flood can terminate when:
+- A node receives a `FloodRequest` with a flood_id that has already been received.
+- A node receives a `FloodRequest` but has no neighbors to forward the request to.
 
 
 # **Client-Server Protocol: Fragments**
