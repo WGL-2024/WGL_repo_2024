@@ -70,30 +70,21 @@ These servers exchange, respectively, Text server messages, Media server message
 
 The fragments that circulate in the network are **source-routed** (except for the commands sent from and the events received by the Simulation Controller).
 
-The **Source Routing Protocol** is a technique where the sender of a data packet specifies the entire route the packet should take through the network. This contrasts with conventional routing, where each node decides the next hop based on the packet's destination. In this network, drones do not maintain routing tables because the path is predefined by the sender.
+Source routing refers to a technique where the sender of a data packet specifies the route the packet takes through the network. This is in contrast with conventional routing, where routers in the network determine the path incrementally based on the packet's destination.
 
+The consequence is that drones do not need to maintain routing tables.
 
-### Source Routing Protocol Steps
+### How Source Routing Works
 
-1. **Initialization**:
-	- **Route Calculation**: The sender calculates the entire path to the destination node, including itself and all intermediate nodes. 
-    - **Construct `hops` List**: A list of node IDs representing the route from the sender to the destination. The sender's ID is at `hops[0]`. 
-    - **Set `hop_index`**: An index indicating the current position in the hops list. It starts at 1 because the sender has already processed itself, and the packet will be sent to `hops[1]`
+When a client or server wants to send a message to another node, it performs the following steps:
 
-2. **At Each Node**:
-	- **Step 1**: Check if `hops[hop_index]` matches the node's own ID.
-		- **If yes**, proceed to Step 2.
-		- **If no**, send a Nack with `ErrorInRouting` and terminate processing.
-	- **Step 2**: Increment `hop_index` by **1**.
-	- **Step 3**: Determine if the node is the final destination:
-		- **If `hop_index` equals the length of `hops`**, the node is the final destination and processes the packet.
-		- **If not**, proceed to Step 4.
-	- **Step 4**: Identify the next hop using `hops[hop_index]`.
-		- **If the next hop is not a neighbor**, send a Nack with `ErrorInRouting` indicating the problematic node ID.
-		- **If the next hop is a neighbor**, send the packet to the next hop.
+1. **Route Computation**: The sender calculates the entire path to the destination node. This path includes the sender itself and all intermediate nodes leading to the destination.
 
-3. **Final Destination**:
-	- The node processes the packet as it has reached its intended recipient.
+2. **Creation of the Source Routing Header**: The sender constructs a header that contains:
+	- **`hops`**: A list of node IDs representing the route from the sender to the destination.
+	- **`hop_index`**: An index indicating the current position in the `hops` list. It starts at **1** because the first hop (`hops[0]`) is the sender itself.
+
+3. **Packet Sending**: The sender attaches the source routing header to the packet and sends it to the first node in the route (the node at `hops[1]`).
 
 ### Step-by-Step Example
 
@@ -111,35 +102,29 @@ Suppose that client A wants to send a message to server D.
 	- **`hop_index`**: `1`.
 - Sends the packet to **B**, the first node after itself.
 
-**Detailed Steps**:
+**At Each Node**:
 
 1. **Node B**:
-	- Receives the packet with `hop_index = 1`.
-	- Checks: `hops[1] = B` matches its own ID.
-	- Increments `hop_index` to `2`.
-	- Next hop is `hops[2] = E`.
+	- Receives the packet.
+	- Determines that the next hop is **E**.
 	- Sends the packet to **E**.
 
 2. **Node E**:
-	- Receives the packet with `hop_index = 2`.
-	- Checks: `hops[2] = E` matches its own ID.
-	- Increments `hop_index` to `3`.
-	- Next hop is `hops[3] = F`.
+	- Receives the packet.
+	- Determines that the next hop is **F**.
 	- Sends the packet to **F**.
 
 3. **Node F**:
-	- Receives the packet with `hop_index = 3`.
-	- Checks: `hops[3] = F` matches its own ID.
-	- Increments `hop_index` to `4`.
-	- Next hop is `hops[4] = D`.
+	- Receives the packet.
+	- Determines that the next hop is **D**.
 	- Sends the packet to **D**.
 
 4. **Node D**:
-	- Receives the packet with `hop_index = 4`.
-	- Checks: `hops[4] = D` matches its own ID.
-	- Increments `hop_index` to `5`.
-	- Since `hop_index` equals the length of `hops`, there are no more hops.
-	- Concludes it is the **final destination** and processes the packet.
+	- Receives the packet.
+	- Sees that there are no more hops in the route.
+	- Processes the packet as the **final destination**.
+
+For detailed steps on how each drone processes packets, including verification, error handling, and forwarding, please refer to the [Drone Protocol](#drone-protocol) section.
 
 	
 ```rust
@@ -150,9 +135,6 @@ struct SourceRoutingHeader {
 	hops: Vec<NodeId>
 }
 ```
-
-#### Notes
-- **Flood Messages**: Flood requests and responses used in network discovery follow different rules and are handled as specified in the Network Discovery Protocol section.
 
 ## Network **Discovery Protocol**
 
@@ -333,29 +315,86 @@ Once that the client or server has received all fragments (that is, `fragment_in
 Therefore, the packet is now a message that can be delivered.
 
 # Drone Protocol
-When a drone receives a packet, it **must** do the following:
 
-1. increase `hop_index` by 1
-2. obtain the (new `hop_index`) + 1 element of the `SourceRoutingHeader` vector `hops`, let's call it `next_hop`
-	* It **must ignore** intentionally to check `hop_index`.
+When a drone receives a packet, it **must** perform the following steps:
 
-3. if `next_hop`
-	* doesn't exist create a new packet of type Nack, precisely of type `DestinationIsDrone`. The packet must have the routing made of a vector but inverted and only contains the nodes from this drone to the sender. Send this packet as a normal packet. End here.
-	* if the `NodeId` is not a neighbor, then creates a new packet of type Nack, precisely of type `ErrorInRouting` with field the value of `NodeId` of next hop. Continue as other error.
+1. **Step 1**: Check if `hops[hop_index]` matches the drone's own `NodeId`.
+	- **If yes**, proceed to Step 2.
+	- **If no**, send a Nack with `ErrorInRouting` (including the drone's own `NodeId`) and terminate processing.
 
-4. Proceed as follows based on packet type:
+2. **Step 2**: Increment `hop_index` by **1**.
 
-### Flood Messages
-TODO  (If the packet is flood related, follow the rules in the flood section)
+3. **Step 3**: Determine if the drone is the final destination:
+	- **If `hop_index` equals the length of `hops`**, the drone is the final destination and processes the packet accordingly.
+	- **If not**, proceed to Step 4.
 
-### Normal Messages
-1. check whether to drop or not the package based on the PDR,
+4. **Step 4**: Identify the next hop using `hops[hop_index]`, let's call it `next_hop`.
+	- **If `next_hop` is not a neighbor** of the drone, send a Nack with `ErrorInRouting` (including the problematic `NodeId` of `next_hop`) and terminate processing.
+	- **If `next_hop` is a neighbor**, proceed to Step 5.
 
-2. based on if the packets need to be dropped or not do:
+5. **Step 5**: Proceed based on the packet type:
 
-	* If is dropped, send back a Nack Packet with type `Dropped`. Follow the rules for sending errors as before.
+   - **Flood Messages**: If the packet is flood-related, follow the rules specified in the **Network Discovery Protocol** section.
+   
+   - **`MsgFragment`**:
 
-	* If it is not dropped, send the packets using the channel relative to the next hops in `SourceRoutingHeader`.
+      a. **Check for Packet Drop**:
+      - Determine whether to drop the packet based on the drone's **Packet Drop Rate (PDR)**.
+
+      b. **If the packet is to be dropped**:
+      - Send back a Nack with type `Dropped`. The Nack should have a Source Routing Header containing the reversed path from the current drone back to the sender.
+      - Terminate processing.
+
+      c. **If the packet is not to be dropped**:
+      - Send the packet to `next_hop` using the appropriate channel.
+
+
+### Step-by-Step Example
+
+Consider the following simplified network topology:
+
+![constellation](assets/costellation.png)
+
+Suppose that client A wants to send a message to server D.
+
+**Client A**:
+
+- Computes the route: **A → B → E → F → D**.
+- Creates a source routing header:
+	- **`hops`**: `[A, B, E, F, D]`.
+	- **`hop_index`**: `1`.
+- Sends the packet to **B**, the first node after itself.
+
+**Detailed Steps**:
+
+1. **Node B**:
+	- Receives the packet with `hop_index = 1`.
+	- Checks: `hops[1] = B` matches its own ID.
+	- Increments `hop_index` to `2`.
+	- Next hop is `hops[2] = E`.
+	- Sends the packet to **E**.
+
+2. **Node E**:
+	- Receives the packet with `hop_index = 2`.
+	- Checks: `hops[2] = E` matches its own ID.
+	- Increments `hop_index` to `3`.
+	- Next hop is `hops[3] = F`.
+	- Sends the packet to **F**.
+
+3. **Node F**:
+	- Receives the packet with `hop_index = 3`.
+	- Checks: `hops[3] = F` matches its own ID.
+	- Increments `hop_index` to `4`.
+	- Next hop is `hops[4] = D`.
+	- Sends the packet to **D**.
+
+4. **Node D**:
+	- Receives the packet with `hop_index = 4`.
+	- Checks: `hops[4] = D` matches its own ID.
+	- Increments `hop_index` to `5`.
+	- Since `hop_index` equals the length of `hops`, there are no more hops.
+	- Concludes it is the **final destination** and processes the packet.
+
 
 ## Simulation
 TODO
