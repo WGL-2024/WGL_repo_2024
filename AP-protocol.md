@@ -72,26 +72,15 @@ The fragments that circulate in the network are **source-routed** (except for th
 
 The **Source Routing Protocol** is a technique where the sender of a data packet specifies the entire route the packet should take through the network. This contrasts with conventional routing, where each node decides the next hop based on the packet's destination. In this network, drones do not maintain routing tables because the path is predefined by the sender.
 
-### How Source Routing Works
-
-When a client or server wants to send a message to another node, it performs the following steps:
-
-1. **Route Computation**: The sender calculates the entire path to the destination node. This path includes the sender itself and all intermediate nodes leading to the destination.
-
-2. **Creation of the Source Routing Header**: The sender constructs a header that contains:
-	- **`hops`**: A list of node IDs representing the route from the sender to the destination.
-	- **`hop_index`**: An index indicating the current position in the `hops` list. It starts at **1** because the first hop (`hops[0]`) is the sender itself.
-
-3. **Packet Sending**: The sender attaches the source routing header to the packet and sends it to the first node in the route (the node at `hops[1]`).
-
 
 ### Source Routing Protocol Steps
 
-1. Initialization:
-	- Sender sets `hop_index` to **1**.
-	- Constructs `hops` list including the sender and all intermediate nodes to the destination.
+1. **Initialization**:
+	- **Route Calculation**: The sender calculates the entire path to the destination node, including itself and all intermediate nodes. 
+    - **Construct `hops` List**: A list of node IDs representing the route from the sender to the destination. The sender's ID is at `hops[0]`. 
+    - **Set `hop_index`**: An index indicating the current position in the hops list. It starts at 1 because the sender has already processed itself, and the packet will be sent to `hops[1]`
 
-2. At Each Node:
+2. **At Each Node**:
 	- **Step 1**: Check if `hops[hop_index]` matches the node's own ID.
 		- **If yes**, proceed to Step 2.
 		- **If no**, send a Nack with `ErrorInRouting` and terminate processing.
@@ -103,7 +92,7 @@ When a client or server wants to send a message to another node, it performs the
 		- **If the next hop is not a neighbor**, send a Nack with `ErrorInRouting` indicating the problematic node ID.
 		- **If the next hop is a neighbor**, send the packet to the next hop.
 
-3. Final Destination:
+3. **Final Destination**:
 	- The node processes the packet as it has reached its intended recipient.
 
 ### Step-by-Step Example
