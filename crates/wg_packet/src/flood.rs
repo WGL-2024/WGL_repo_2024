@@ -1,4 +1,4 @@
-use wg_network::{NodeId};
+use wg_network::NodeId;
 
 #[derive(Debug, Clone)]
 pub enum NodeType {
