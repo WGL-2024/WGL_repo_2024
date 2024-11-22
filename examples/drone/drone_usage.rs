@@ -75,10 +75,12 @@ fn main() {
         let id = 1;
         let (sim_contr_send, sim_contr_recv) = crossbeam_channel::unbounded();
         let (_packet_send, packet_recv) = crossbeam_channel::unbounded();
+        let packet_send = HashMap::new();
         let mut drone = MyDrone::new(DroneOptions {
             id,
             sim_contr_recv,
             sim_contr_send,
+            packet_send,
             packet_recv,
             pdr: 0.1,
         });
