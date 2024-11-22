@@ -7,4 +7,7 @@ pub enum Command {
     AddChannel(NodeId, Sender<Packet>),
     RemoveChannel(NodeId),
     Crash,
+    ChangePdr(f32),
+    SentMessage(Packet),
+    DroppedMessage(Packet)
 }

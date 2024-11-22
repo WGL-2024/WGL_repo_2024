@@ -307,30 +307,42 @@ TODO
 
 # Simulation Controller
 
-Like nodes, the **Simulation Controller** runs on a thread. It must retain a means of communication with all nodes of the network, even when drones go down.
+Like nodes, the **Simulation Controller** (SC) runs on a thread. It must retain a means of communication with all nodes of the network, even when drones go down. 
+The Simulation controller can send different commands to the nodes (drones, clients and servers) through a reserved channel. The **command** list of available commands is as follows:
+
+```rust
+pub enum Command {
+    AddChannel(NodeId, Sender<Packet>),
+    RemoveChannel(NodeId),
+    Crash,
+    ChangePdr(f32),
+    SentMessage(Packet),
+    DroppedMessage(Packet)
+}
+```
 
 ### Simulation commands
 
-The Simulation Controller can send the following commands to drones:
+Below are documented the commands that can be exchanged between the SC and any type of node (drone, client, server):
 
-`Crash`: This commands makes a drone crash. Upon receiving this command, the drone’s thread should return as soon as possible.
+- **SC -> Node (any)**
 
-`AddSender(crossbeam::Sender, dst_id)`: This command provides a node with a new crossbeam Sender to send messages to node `dst_id`.
+  - `Crash`: This commands makes a node crash. Upon receiving this command, the node’s thread should return as soon as possible. The last thing the node should do is to confirm that it is terminating by sending a Crash command to the SC. (Possible idea, other proposal are accepted). 
+  - `AddChannel(NodeId, Sender<Packet>)`: This command tells a node to add a new **edge** to the node with id `NodeId` and to use the provided `Sender<Packet>` channel to communicate with it. Since we are assuming bidirectional communication, this command must be used **two times** (i.e. to add the edge from `A` to `B`, we must add the `Sender from A to B` and the `Sender from B to A`).
+  - `RemoveChannel(NodeId)`: This command tells a node to remove the edge to the node with id `NodeId`. Since we are assuming bidirectional communication, this command must be used **two times** (i.e. to remove the edge from `A` to `B`, we must remove the `Sender from A to B` and the `Sender from B to A`).
 
-`AddReceiver(mpsc::Receiver, src_id)`: This command provides a node with a new crossbeam Receiver to receive messages from node `src_id`.
+- **Node (any) -> SC**
 
-`Spawn(id, code)`: This command adds a new drone to the network.
+  - `Crash`: used by a node to confirm that it is terminating.
+  - `SentMessage(Packet)`: a node sends this command every time it sends a message to another node (drone, client or server). In this way, the SC can keep track of the network activity.
 
-`SetPacketDropRate(id, new_pdr)`:
+Additionally, to the commands above, the SC and the drones can **exclusively exchange** the following commands:
 
-### Simulation events
+- **SC -> Drone**
+  - `ChangePdr(f32)` this command tells a drone to change its Packet Drop Rate to the new value provided.
 
-The Simulation Controller can receive the following events from nodes:
-
-`Topology(node_id, list_of_connected_ids, metadata)`: This event indicates that node `node_id` has been added to the network and its current neighbors are `list_of_connected_ids`. It can carry metadata that could be useful to display, such as the PDR and DR of Drones.
-
-`MessageSent(node_src, node_trg, metadata)`: This event indicates that node `node_src` has sent a message to `node_trg`. It can carry useful metadata that could be useful display, such as the kind of message, that would allow debugging what is going on in the network.
-
+- **Drone -> SC**
+  - `DroppedMessage(Packet)`: the drone sends this command every time it drops a message. 
 
 # **Client-Server Protocol: High-level Messages**
 
