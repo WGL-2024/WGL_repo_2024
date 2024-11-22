@@ -325,7 +325,7 @@ When a drone receives a packet, it **must** perform the following steps:
 2. **Step 2**: Increment `hop_index` by **1**.
 
 3. **Step 3**: Determine if the drone is the final destination:
-	- **If `hop_index` equals the length of `hops`**, the drone is the final destination and processes the packet accordingly.
+	- **If `hop_index` equals the length of `hops`**, the drone is the final destination send a Nack with `DestinationIsDrone` and terminate processing.
 	- **If not**, proceed to Step 4.
 
 4. **Step 4**: Identify the next hop using `hops[hop_index]`, let's call it `next_hop`.
