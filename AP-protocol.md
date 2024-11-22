@@ -194,9 +194,8 @@ pub struct MessageData {
 If a drone receives a Message and can forward it to the next hop, it also sends an Ack to the client.
 
 ```rust
-pub struct Ack{
+pub struct Ack {
 	fragment_index: u64,
-	time_received: std::time::Instant
 }
 ```
 
@@ -212,7 +211,6 @@ This message cannot be dropped by drones due to Packet Drop Rate.
 ```rust
 pub struct Nack {
 	fragment_index: u64,
-	time_of_fail: std::time::Instant,
 	nack_type: NackType
 }
 
