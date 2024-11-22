@@ -25,11 +25,11 @@ Any number of drones, each formatted as:
 ```TOML
 [[drone]]
 id = "drone_id"
-connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
+connected_node_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
 pdr = "pdr"
 ```
 - note that the `pdr` is defined between 0 and 1 (0.05 = 5%).
-- note that `connected_drone_ids` cannot contain `drone_id` nor repetitions
+- note that `connected_node_ids` cannot contain `drone_id` nor repetitions
 
 ### Clients
 Any number of clients, each formatted as:

@@ -6,7 +6,7 @@ use wg_network::NodeId;
 #[cfg_attr(feature = "serialize", derive(Deserialize))]
 pub struct Drone {
     pub id: NodeId,
-    pub connected_drone_ids: Vec<NodeId>,
+    pub connected_node_ids: Vec<NodeId>,
     pub pdr: f32,
 }
 
