@@ -7,6 +7,6 @@ Please read [CONTRIBUTE.md](CONTRIBUTE.md)
 _Cargo.toml_
 ```toml
 [dependencies]
-wg_2024 = { git = "https://github.com/WGL-2024/WGL_repo_2024.git", features = ["serialize"] }
+wg_2024 = { git = "https://github.com/WGL-2024/WGL_repo_2024.git", branch = "main", features = ["serialize"] }
 ```
 if you don't want serde remove the features attribute
