@@ -1,28 +1,28 @@
 use wg_network::{NodeId, SourceRoutingHeader};
 
 #[derive(Debug, Clone)]
-pub struct Message<M: MessageContent> {
+pub struct Message<M: Serializable> {
     pub message_data: MessageData<M>,
     pub routing_header: SourceRoutingHeader,
 }
 
 // Only part fragmentized
 #[derive(Debug, Clone)]
-pub struct MessageData<M: MessageContent> {
+pub struct MessageData<M: Serializable> {
     pub source_id: NodeId,
     pub session_id: u64,
     pub content: M,
 }
 
-pub trait MessageContent {
+pub trait Serializable {
     fn serialize(&self) -> String;
     fn deserialize(serialized: String) -> Result<Self, String>
     where
         Self: Sized;
 }
 
-pub trait Request: MessageContent {}
-pub trait Response: MessageContent {}
+pub trait Request: Serializable {}
+pub trait Response: Serializable {}
 
 // ReqServerType,
 #[derive(Debug, Clone)]
@@ -31,7 +31,7 @@ pub enum TextRequest {
     Text(u64),
 }
 
-impl MessageContent for TextRequest {
+impl Serializable for TextRequest {
     fn serialize(&self) -> String {
         match self {
             TextRequest::TextList => "TextList".to_string(),
@@ -62,7 +62,7 @@ pub enum MediaRequest {
     Media(u64),
 }
 
-impl MessageContent for MediaRequest {
+impl Serializable for MediaRequest {
     fn serialize(&self) -> String {
         todo!()
     }
@@ -80,7 +80,7 @@ pub enum ChatRequest {
     SendMessage { from: NodeId, to: NodeId, message: String },
 }
 
-impl MessageContent for ChatRequest {
+impl Serializable for ChatRequest {
     fn serialize(&self) -> String {
         todo!()
     }
@@ -98,7 +98,7 @@ pub enum TextResponse {
     NotFound,
 }
 
-impl MessageContent for TextResponse {
+impl Serializable for TextResponse {
     fn serialize(&self) -> String {
         todo!()
     }
@@ -115,7 +115,7 @@ pub enum MediaResponse {
     Media(Vec<u8>), // should we use some other type?
 }
 
-impl MessageContent for MediaResponse {
+impl Serializable for MediaResponse {
     fn serialize(&self) -> String {
         todo!()
     }
@@ -133,7 +133,7 @@ pub enum ChatResponse {
     MessageSent,
 }
 
-impl MessageContent for ChatResponse {
+impl Serializable for ChatResponse {
     fn serialize(&self) -> String {
         todo!()
     }
@@ -147,7 +147,7 @@ impl Response for ChatResponse {}
 mod example {
     use wg_network::{NodeId, SourceRoutingHeader};
     use wg_network::topology::ServerType;
-    use crate::{ChatRequest, ChatResponse, Message, MessageContent, MessageData, Request, Response};
+    use crate::{ChatRequest, ChatResponse, Message, Serializable, MessageData, Request, Response};
 
     trait Server {
         type RequestType: Request;
