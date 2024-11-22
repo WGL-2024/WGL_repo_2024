@@ -360,6 +360,7 @@ pub enum MessageContent {
 	RespMedia(Vec<u8>),
 	ErrUnsupportedRequestType,
 	ErrRequestedNotFound,
+
 	RespClientList(Vec<NodeId>),
 	RespMessageFrom { from: NodeId, message: Vec<u8> },
 	ErrWrongClientId,
