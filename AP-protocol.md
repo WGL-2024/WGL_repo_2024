@@ -308,7 +308,7 @@ TODO
 # Simulation Controller
 
 Like nodes, the **Simulation Controller** (SC) runs on a thread. It must retain a means of communication with all nodes of the network, even when drones go down. 
-The Simulation controller can send different commands to the nodes (drones, clients and servers) through a reserved channel. The **command** list of available commands is as follows:
+The Simulation controller can send and receive different commands to/from the nodes (drones, clients and servers) through reserved channels. The list of available **commands** is as follows:
 
 ```rust
 pub enum Command {
@@ -323,11 +323,11 @@ pub enum Command {
 
 ### Simulation commands
 
-Below are documented the commands that can be exchanged between the SC and any type of node (drone, client, server):
+Below are documented the commands that can be exchanged between the **SC and any type of node** (drone, client, server):
 
 - **SC -> Node (any)**
 
-  - `Crash`: This commands makes a node crash. Upon receiving this command, the node’s thread should return as soon as possible. The last thing the node should do is to confirm that it is terminating by sending a Crash command to the SC. (Possible idea, other proposal are accepted). 
+  - `Crash`: This commands makes a node crash. Upon receiving this command, the node’s thread should return as soon as possible. The last thing the node should do is to confirm that it is terminating by sending a Crash command to the SC. 
   - `AddChannel(NodeId, Sender<Packet>)`: This command tells a node to add a new **edge** to the node with id `NodeId` and to use the provided `Sender<Packet>` channel to communicate with it. Since we are assuming bidirectional communication, this command must be used **two times** (i.e. to add the edge from `A` to `B`, we must add the `Sender from A to B` and the `Sender from B to A`).
   - `RemoveChannel(NodeId)`: This command tells a node to remove the edge to the node with id `NodeId`. Since we are assuming bidirectional communication, this command must be used **two times** (i.e. to remove the edge from `A` to `B`, we must remove the `Sender from A to B` and the `Sender from B to A`).
 
@@ -336,7 +336,7 @@ Below are documented the commands that can be exchanged between the SC and any t
   - `Crash`: used by a node to confirm that it is terminating.
   - `SentMessage(Packet)`: a node sends this command every time it sends a message to another node (drone, client or server). In this way, the SC can keep track of the network activity.
 
-Additionally, to the commands above, the SC and the drones can **exclusively exchange** the following commands:
+In addition to the commands above, the **SC** and the **drones** can **exclusively exchange** the following commands:
 
 - **SC -> Drone**
   - `ChangePdr(f32)` this command tells a drone to change its Packet Drop Rate to the new value provided.
