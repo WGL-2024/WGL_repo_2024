@@ -354,12 +354,12 @@ pub enum MessageContent {
 	ReqMessageSend { to: NodeId, message: Vec<u8> },
 
 	// Server -> Client
-	RespServerType(ServerType),
+	RespServerType(ServerType)
 	RespFilesList(Vec<u64>),
 	RespFile(Vec<u8>),
 	RespMedia(Vec<u8>),
 	ErrUnsupporedRequestType,
-	ErrRequestedNotFound,
+	ErrRequestedNotFound
 
 	RespClientList(Vec<NodeId>),
 	RespMessageFrom { from: NodeId, message: Vec<u8> },
