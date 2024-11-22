@@ -172,8 +172,11 @@ mod example {
                 return;
             }
             match Self::compose_message(routing_header, source_id, session_id, raw_content) {
-                Ok(message) => self.send_response(self.handle_request(message.message_data)),
-                Err(str) => panic!(str)
+                Ok(message) => {
+                    let response = self.handle_request(message.message_data.content);
+                    self.send_response(response);
+                }
+                Err(str) => panic!("{}", str)
             }
         }
 
