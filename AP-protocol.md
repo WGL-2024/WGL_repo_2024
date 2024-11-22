@@ -263,13 +263,13 @@ To reassemble fragments into a single packet, a client or server uses the fragme
 
 2. It first checks the `session_id` in the header.
 
-3. If it has not received a fragment with the same `session_id`, then it creates a vector big enough where to copy the data of the fragments.
+3. If it has not received a fragment with the same `session_id`, then it creates a vector (`Vec<u8>` with capacity of
+   `total_n_fragments` * 80) where to copy the
+   data of the fragments;
 
-4. The client would need to create a `vec<u8>` with capacity of `total_n_fragments` * 80.
+4. It would then copy `length` elements of the `data` array at the correct offset in the vector.
 
-5.  It would then copy `file_size` elements of the `file` array at the correct offset in the vector.
-
-Note that, if there are more than one fragment, `file_size` must be 80 for all fragments except for the last.
+> Note: if there are more than one fragment, `length` must be 80 for all fragments except for the last.
 
 If the client or server has already received a fragment with the same `session_id`, then it just needs to copy the data of the fragment in the vector.
 
@@ -354,12 +354,12 @@ pub enum MessageContent {
 	ReqMessageSend { to: NodeId, message: Vec<u8> },
 
 	// Server -> Client
-	RespServerType(ServerType)
+	RespServerType(ServerType),
 	RespFilesList(Vec<u64>),
 	RespFile(Vec<u8>),
 	RespMedia(Vec<u8>),
 	ErrUnsupporedRequestType,
-	ErrRequestedNotFound
+	ErrRequestedNotFound,
 
 	RespClientList(Vec<NodeId>),
 	RespMessageFrom { from: NodeId, message: Vec<u8> },
