@@ -316,8 +316,8 @@ pub enum Command {
     RemoveChannel(NodeId),
     Crash,
     ChangePdr(f32),
-    SentMessage(Packet),
-    DroppedMessage(Packet)
+    SentPacket(Packet),
+    DroppedPacket(Packet, f32),
 }
 ```
 
@@ -334,7 +334,7 @@ Below are documented the commands that can be exchanged between the **SC and any
 - **Node (any) -> SC**
 
   - `Crash`: used by a node to confirm that it is terminating.
-  - `SentMessage(Packet)`: a node sends this command every time it sends a message to another node (drone, client or server). In this way, the SC can keep track of the network activity.
+  - `SentPacket(Packet)`: a node sends this command every time it sends a packet to another node (drone, client or server). In this way, the SC can keep track of the network activity.
 
 In addition to the commands above, the **SC** and the **drones** can **exclusively exchange** the following commands:
 
@@ -342,7 +342,7 @@ In addition to the commands above, the **SC** and the **drones** can **exclusive
   - `ChangePdr(f32)` this command tells a drone to change its Packet Drop Rate to the new value provided.
 
 - **Drone -> SC**
-  - `DroppedMessage(Packet)`: the drone sends this command every time it drops a message. 
+  - `DroppedPacket(Packet, f32)`: the drone sends this command every time it drops a packet. The `f32` value is the *Packet Drop Rate* of the drone at the time the packet was dropped. 
 
 # **Client-Server Protocol: High-level Messages**
 

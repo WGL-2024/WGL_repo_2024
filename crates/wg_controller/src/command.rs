@@ -8,6 +8,6 @@ pub enum Command {
     RemoveChannel(NodeId),
     Crash,
     ChangePdr(f32),
-    SentMessage(Packet),
-    DroppedMessage(Packet),
+    SentPacket(Packet),
+    DroppedPacket(Packet, f32),
 }
