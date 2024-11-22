@@ -1,22 +1,21 @@
 # [Faulty] The communication protocol specifications
 
-This document provides the specifications of the communication protocol used by the drones, the client and the servers of the network. In the following document, drones, clients and servers are collectively referred to as **nodes**. The specifications are often broken or incomplete and you must improve over them.
+This document provides the specifications of the communication protocol used by the drones, the client and the servers of the network. In the following document, drones, clients and servers are collectively referred to as **nodes**. The specifications are often broken or incomplete, you must improve over them.
 
 This document also establishes some technical requirements of the project.
 
 # Types used in this document
 Can be useful for understanding and for not having to change the underlining type everywhere.
 
-``` Rust
+```rust
 type NodeId = u64;
-
 ```
 
 # Network Initializer
 
 The **Network Initializer** reads a local **Network Initialization File** that encodes the network topology and the drone parameters and, accordingly, spawns the node threads and sets up the Rust channels for communicating between nodes.
 
-> Importantly, the Network Initializer should also setup the Rust channels between the nodes and the Simulation Controller (see the Simulation Controller section).
+> Importantly, the Network Initializer should also set up the Rust channels between the nodes and the Simulation Controller (see the Simulation Controller section).
 
 ## Network Initialization File
 The **Network Initialization File** is in the `.toml` format, and structured as explained below:
@@ -41,7 +40,7 @@ connected_drone_ids = ["connected_id1", "..."] # max 2 entries
 ```
 - note that `connected_drone_ids` cannot contain `client_id` nor repetitions
 - note that a client cannot connect to other clients or servers
-- note that a client can be connected to at most two drones
+- note that a client can be connected to at least one and at most two drones
 
 ### Servers
 Any number of servers, each formatted as:
@@ -210,9 +209,9 @@ As described in the main document, `Message`s must be serialized and can be poss
 ```rust
 #[derive(Debug)]
 pub enum ServerType {
-	ChatServer, // only does chat
-	TextServer, // only does text
-	MediaServer, // does text and media
+	ChatServer,
+	TextServer,
+	MediaServer,
 }
 
 #[derive(Debug)]
@@ -222,7 +221,8 @@ pub struct Message {
 }
 
 #[derive(Debug)]
-pub struct MessageData { // Only part fragmented
+// Part to be fragmented
+pub struct MessageData {
 	session_id: u64,
 	content: MessageContent
 }
@@ -266,7 +266,7 @@ Source Routing Header contains the path to the client, which can be obtained by 
 
 ### Serialization
 
-As described in the main document, Message fragment cannot contain dynamically-sized data structures (that is, **no** `Vec`, **no** `String`, etc). Therefore, packets will contain large, fixed-size arrays instead.
+As described in the main document, Message fragment cannot contain dynamically-sized data structures (that is, **no** `Vec`, **no** `String`, etc.). Therefore, packets will contain large, fixed-size arrays instead.
 
 ### Fragment reassembly
 
@@ -291,7 +291,7 @@ pub struct Fragment {
 	fragment_index: u64,
 	total_n_fragments: u64,
 	length: u8,
-	// assembler will fragment/defragment data into bytes.
+	// assembler will fragment/de-fragment data into bytes.
 	data: [u8; 80] // usable for image with .into_bytes()
 }
 ```
@@ -433,7 +433,7 @@ The Simulation Controller can receive the following events from nodes:
 
 These are the kinds of high-level messages that we expect can be exchanged between clients and servers.
 
-Notice that these messages are not subject to the rules of fragmentation, in fact, they can exchange Strings, Vecs and other dynamically-sized types
+Notice that these messages are not subject to the rules of fragmentation, in fact, they can exchange Strings, `Vecs` and other dynamically-sized types
 
 #### Message Types
 ```rust
@@ -450,12 +450,12 @@ pub enum MessageContent {
 	ReqMessageSend { to: NodeId, message: Vec<u8> },
 
 	// Server -> Client
-	RespServerType(ServerType)
+	RespServerType(ServerType),
 	RespFilesList(Vec<u64>),
 	RespFile(Vec<u8>),
 	RespMedia(Vec<u8>),
-	ErrUnsupporedRequestType,
-	ErrRequestedNotFound
+	ErrUnsupportedRequestType,
+	ErrRequestedNotFound,
 
 	RespClientList(Vec<NodeId>),
 	RespMessageFrom { from: NodeId, message: Vec<u8> },
@@ -465,7 +465,8 @@ pub enum MessageContent {
 
 Example of new file request, with id = 8:
 ```rust
-let routing = getRoutingHeader();
-let content = MessageType:ReqFile(8);
-Message::new(routing, source_id, session_id, content)
+fn new_file_request(source_id: NodeId, session_id: u64, routing: SourceRoutingHeader) -> Message {
+	let content = MessageType::ReqFile(8);
+	Message::new(routing, source_id, session_id, content)
+}
 ```

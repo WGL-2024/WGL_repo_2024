@@ -33,7 +33,7 @@ pub enum MessageContent {
     RespFilesList(Vec<u64>),
     RespFile(Vec<u8>),
     RespMedia(Vec<u8>),
-    ErrUnsupporedRequestType,
+    ErrUnsupportedRequestType,
     ErrRequestedNotFound,
 
     RespClientList(Vec<NodeId>),
