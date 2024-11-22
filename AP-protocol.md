@@ -78,13 +78,15 @@ The consequence is that drones do not need to maintain routing tables.
 
 When a client or server wants to send a message to another node, it performs the following steps:
 
-1. **Route Computation**: The sender calculates the entire path to the destination node. This path includes the sender itself and all intermediate nodes leading to the destination.
+- **Route Computation**: The sender calculates the entire path to the destination node. This path includes the sender itself and all intermediate nodes leading to the destination.
 
-2. **Creation of the Source Routing Header**: The sender constructs a header that contains:
+- **Creation of the Source Routing Header**: The sender constructs a header that contains:
 	- **`hops`**: A list of node IDs representing the route from the sender to the destination.
 	- **`hop_index`**: An index indicating the current position in the `hops` list. It starts at **1** because the first hop (`hops[0]`) is the sender itself.
 
-3. **Packet Sending**: The sender attaches the source routing header to the packet and sends it to the first node in the route (the node at `hops[1]`).
+- **Packet Sending**: The sender attaches the source routing header to the packet and sends it to the first node in the route (the node at `hops[1]`).
+
+Note: it is not mandatory to follow this precise order.
 
 ### Step-by-Step Example
 
@@ -320,7 +322,7 @@ When a drone receives a packet, it **must** perform the following steps:
 
 1. **Step 1**: Check if `hops[hop_index]` matches the drone's own `NodeId`.
 	- **If yes**, proceed to Step 2.
-	- **If no**, send a Nack with `ErrorInRouting` (including the drone's own `NodeId`) and terminate processing.
+	- **If no**, send a Nack with `UnexpectedRecipient` (including the drone's own `NodeId`) and terminate processing.
 
 2. **Step 2**: Increment `hop_index` by **1**.
 
