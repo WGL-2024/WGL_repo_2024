@@ -24,3 +24,7 @@ required-features = ["serialize"]
 [[example]]
 name = "drone_usage"
 path = "examples/drone/drone_usage.rs"
+
+[[example]]
+name = "server"
+path = "examples/server/server.rs"
