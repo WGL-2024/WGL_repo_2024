@@ -317,7 +317,7 @@ pub enum Command {
     Crash,
     ChangePdr(f32),
     SentPacket(Packet),
-    DroppedPacket(Packet, f32),
+    DroppedPacket(Packet),
 }
 ```
 
@@ -342,7 +342,7 @@ In addition to the commands above, the **SC** and the **drones** can **exclusive
   - `ChangePdr(f32)` this command tells a drone to change its Packet Drop Rate to the new value provided.
 
 - **Drone -> SC**
-  - `DroppedPacket(Packet, f32)`: the drone sends this command every time it drops a packet. The `f32` value is the *Packet Drop Rate* of the drone at the time the packet was dropped. 
+  - `DroppedPacket(Packet)`: the drone sends this command every time it drops a packet.
 
 # **Client-Server Protocol: High-level Messages**
 

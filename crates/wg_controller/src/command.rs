@@ -9,5 +9,5 @@ pub enum Command {
     Crash,
     ChangePdr(f32),
     SentPacket(Packet),
-    DroppedPacket(Packet, f32),
+    DroppedPacket(Packet),
 }
