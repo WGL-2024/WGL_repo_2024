@@ -1,4 +1,4 @@
-pub mod node;
-pub mod routing;
-pub use node::*;
+mod routing;
+pub mod topology;
+
 pub use routing::*;

@@ -8,7 +8,7 @@ This document also establishes some technical requirements of the project.
 Can be useful for understanding and for not having to change the underlining type everywhere.
 
 ```rust
-type NodeId = u64;
+type NodeId = u8;
 ```
 
 # Network Initializer
