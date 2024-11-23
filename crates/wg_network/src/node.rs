@@ -5,7 +5,6 @@ use std::rc::Rc;
 
 pub type NodeRef = Rc<RefCell<Node>>;
 
-
 #[derive(Debug, Clone)]
 pub struct Node {
     pub name: NodeId,
