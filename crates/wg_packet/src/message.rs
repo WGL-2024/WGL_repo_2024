@@ -1,5 +1,5 @@
 use crate::packet::Fragment;
-use wg_network::topology::ServerType;
+use wg_network::node::ServerType;
 use wg_network::{NodeId, SourceRoutingHeader};
 
 #[derive(Debug, Clone)]

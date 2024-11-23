@@ -5,10 +5,6 @@ use std::rc::Rc;
 
 pub type NodeRef = Rc<RefCell<Node>>;
 
-#[derive(Debug, Clone)]
-pub struct Topology {
-    pub nodes: Vec<NodeRef>,
-}
 
 #[derive(Debug, Clone)]
 pub struct Node {

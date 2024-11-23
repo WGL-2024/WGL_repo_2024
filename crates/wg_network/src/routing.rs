@@ -1,4 +1,4 @@
-pub type NodeId = u8;
+pub type NodeId = u64;
 
 #[derive(Debug, Clone)]
 pub struct SourceRoutingHeader {

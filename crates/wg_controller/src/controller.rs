@@ -1,4 +1,4 @@
-use wg_network::topology::Node;
+use wg_network::node::Node;
 
 pub trait SimulationController {
     fn crash(&mut self, crashed: &str);

@@ -106,54 +106,73 @@ When the network is first initialized, nodes only know who their own neighbors a
 
 Clients and servers need to obtain an understanding of the network topology ("what nodes are there in the network and what are their types?") so that they can compute a route that packets take through the network (refer to the Source routing section for details).
 
-To do so, they must use the **Network Discovery Protocol**. The Network Discovery Protocol is initiated by clients and servers and works through query flooding.
+To do so, they must use the **Network Discovery Protocol**. The Network Discovery Protocol is initiated by clients and servers and works through query flooding, or by newly connected drones.
 
 ### **Flooding Initialization**
 
-The client or server that wants to learn the topology, called the **initiator**, starts by flooding a query to all its immediate neighbors:
+The client or server that wants to learn the topology (or a path to a certain node), called the **initiator**, starts by flooding a query to all its immediate neighbors:
 
 ```rust
-enum NodeType {Client, Drone, Server}
+pub struct FloodRequest {
+	// The flood ID, randomly generated to prevent clashes between floods.
+    pub flood_id: u64,
+	// The initiator's ID
+    pub prev_hop: NodeId,
+	// If for some reason the initiator wants to ONLY find a path to a specific NodeId, it can set this field
+    pub to: Option<NodeId>,
+	// MUST be set to 'standard' unless this flood is triggered due to a crash, in which case it SHOULD be set to 'PreviousFloodFailed'
+    pub reason: FloodReason
 
-struct FloodRequest {
-	/// Unique identifier of the flood, to prevent loops.
-	flood_id: u64,
-	/// ID of client or server
-	initiator_id: NodeId,
-	/// Time To Live, decremented at each hop to limit the query's lifespan.
-	/// When ttl reaches 0, we start a FloodResponse message that reaches back to the initiator
-	ttl: u8,
-	/// Records the nodes that have been traversed (to track the connections).
-	path_trace: Vec<(NodeId, NodeType)>
 }
 ```
 
-### **Neighbor Response**
 
-When a neighbor node receives the flood request, it processes it based on the following rules:
+### **Neighbor response and forwarding**
 
-- If the flood request was not received earlier, the node forwards the updated packet to its neighbors (except the one it received the flood request from) decreasing the TTL by 1, otherwise set the TTL to 0.
-- If the TTL of the message is 0, build a `FloodResponse` and send it along the same path back to the initiator.
+When a neighbor receives a flood request with a certain ID for the first time, it saves the flood ID and previous hop internally, amd it MUST return a `FloodProcessing` response with its own node ID as the `processing_node_id` and the current flood ID.
 
+The node then swaps `prev_hop` in the received `FloodRequest` with itself and proceeds to send it to all of its neighbors except the one it just received it from.
+
+The node then waits for replies, and notes down every node from which it receives a `FloodProcessing` response as **pending** in the current flood request.
+
+In case a neighbor crashes (AKA a notification from the controller to drop that channel is received), that node is marked as **failed**
+
+If the node is seeing a `FloodRequest` with the same flood ID it has already seen, it MUST ignore the request.
+
+### **Replies, merging and termination condition**
+
+When a **pending** neighbor returns a `FloodData` message, the message is temporarily saved and the node is marked as **done**. When all neighbors are **done** or **failed**, or if there are none (in the case of a node connected to only one neighbor, from which it has received the request) the Node creates its own `FloodData`:
 ```rust
-struct FloodResponse {
-	flood_id: u64,
-	source_routing_header: SourceRoutingHeader,
-	path_trace: Vec<(NodeId, NodeType)>
+pub struct FloodData {
+	// The original flood ID
+    pub flood_id: u64,
+	// Its own node ID
+	pub from:  NodeId
+	// Its own node ID and type
+    pub node_list: HashSet<(NodeId, NodeType)>,
+	// See below for explaination
+    pub connections: HashSet<(NodeId, NodeId)>,
+	// The Node ID of one of the nodes marked as "failed", otherwise None
+    pub error_at: Option<NodeId>,
+	// Kept at "false" 
+    pub is_broadcast: bool 
 }
 ```
+The `connections` field gets populated with the neighbors, creating a tuple of two node IDs, one being the current and one being the neighbor, which MUST be in ascending order: (n1,n2) where n1 < n2 always.
+The node then proceeds to merge all obtained responses, and MUST send the final response to the previous hop it had stored, changing the `from` field to its own ID.
 
-### **Recording Topology Information**
+### **Special considerations for Requests containing a "to" field**
+In this case, when returning a `FloodData` packet, the fields `connections` and `node_list` get set to empty, unless:
+	- The node is the target node, in which case it MUST populate `node_list` with itself, and MUST add the connection to the previous hop on the request to `connections`, or
+	- The node is not the target node but has received a non-empty `FloodData`, in which case it MUST add the connection to the previous hop as described above, and CAN add itself to the `node_list`.
 
-For every flood response or acknowledgment the initiator receives, it updates its understanding of the graph:
+### **Broadcast messages**
 
-- If the node receives a flood response with a **path trace**, it records the paths between nodes. The initiator learns not only the immediate neighbors but also the connections between nodes further out.
-- Over time, as the query continues to flood, the initiator accumulates more information and can eventually reconstruct the entire graph's topology.
+When a drone first connects to the network, it creates a `FloodData` message, containing a random `flood_id`, itself as the `node_list` and its neighbors as `connections`, with `is_broadcast` set to true. This message SHOULD get forwarded to neighbouring nodes. When receiving such a message a node MUST forward it to every other neighbor except the one it received it from. If received a second time the message MUST get ignored.
 
-### **Termination Condition**
-
-The flood can terminate when:
-
+### **Optional considerations**
+Nodes can speed up the processing of packets containing the "to" field if they're connected to the target node by forwarding the request only to that node.
+If a server or client receives a `FloodRequest` with `FloodReason` set to `PreviousFloodFailed`, it can use it as a heuristic to indicate that it must relearn the topology.
 
 # **Client-Server Protocol: Fragments**
 
@@ -293,7 +312,7 @@ When a drone receives a packet, it **must** do the following:
 4. Proceed as follows based on packet type:
 
 ### Flood Messages
-TODO  (If the packet is flood related, follow the rules in the flood section)
+Refer to the Network Initialization section of the protocol.
 
 ### Normal Messages
 1. check whether to drop or not the package based on the PDR,

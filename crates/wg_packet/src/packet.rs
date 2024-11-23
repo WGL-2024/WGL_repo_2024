@@ -1,4 +1,4 @@
-use crate::{FloodRequest, FloodResponse};
+use crate::{FloodRequest, FloodData};
 use wg_network::{NodeId, SourceRoutingHeader};
 
 // Is atomic unit to be sent
@@ -15,7 +15,8 @@ pub enum PacketType {
     Nack(Nack),
     Ack(Ack),
     FloodRequest(FloodRequest),
-    FloodResponse(FloodResponse),
+    FloodResponse(FloodData),
+    FloodProcessing
 }
 
 #[derive(Debug, Clone)]
