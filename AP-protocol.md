@@ -165,6 +165,7 @@ The node then proceeds to merge all obtained responses, and MUST send the final 
 In this case, when returning a `FloodData` packet, the fields `connections` and `node_list` get set to empty, unless:
 	- The node is the target node, in which case it MUST populate `node_list` with itself, and MUST add the connection to the previous hop on the request to `connections`, or
 	- The node is not the target node but has received a non-empty `FloodData`, in which case it MUST add the connection to the previous hop as described above, and CAN add itself to the `node_list`.
+Nodes SHOULD avoid waiting for all the **pending** nodes, immediately sending a `FloodData` message (since other replies would be either empty or represent longer paths).
 
 ### **Broadcast messages**
 
