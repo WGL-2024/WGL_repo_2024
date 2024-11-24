@@ -327,22 +327,22 @@ Below are documented the commands that can be exchanged between the **SC and any
 
 - **SC -> Node (any)**
 
-  - `Crash`: This commands makes a node crash. Upon receiving this command, the node’s thread should return as soon as possible. The last thing the node should do is to confirm that it is terminating by sending a Crash command to the SC. 
   - `AddChannel(NodeId, Sender<Packet>)`: This command tells a node to add a new **edge** to the node with id `NodeId` and to use the provided `Sender<Packet>` channel to communicate with it. Since we are assuming bidirectional communication, this command must be used **two times** (i.e. to add the edge from `A` to `B`, we must add the `Sender from A to B` and the `Sender from B to A`).
   - `RemoveChannel(NodeId)`: This command tells a node to remove the edge to the node with id `NodeId`. Since we are assuming bidirectional communication, this command must be used **two times** (i.e. to remove the edge from `A` to `B`, we must remove the `Sender from A to B` and the `Sender from B to A`).
 
 - **Node (any) -> SC**
 
-  - `Crash`: used by a node to confirm that it is terminating.
   - `SentPacket(Packet)`: a node sends this command every time it sends a packet to another node (drone, client or server). In this way, the SC can keep track of the network activity.
 
 In addition to the commands above, the **SC** and the **drones** can **exclusively exchange** the following commands:
 
 - **SC -> Drone**
   - `ChangePdr(f32)` this command tells a drone to change its Packet Drop Rate to the new value provided.
+  - `Crash`: This commands makes a node crash. Upon receiving this command, the node’s thread should return as soon as possible. The last thing the node should do is to confirm that it is terminating by sending a Crash command to the SC. 
 
 - **Drone -> SC**
   - `DroppedPacket(Packet)`: the drone sends this command every time it drops a packet.
+  - `Crash`: used by a node to confirm that it is terminating.
 
 # **Client-Server Protocol: High-level Messages**
 
