@@ -1,9 +1,10 @@
 #![allow(unused)]
 
-use crossbeam_channel::{select, Receiver, Sender};
+use crossbeam_channel::{select, unbounded, Receiver, Sender};
 use std::collections::HashMap;
-use std::thread;
-use wg_2024::controller::Command;
+use std::{fs, thread};
+use wg_2024::config::Config;
+use wg_2024::controller::{ControllerCommand, DroneCommand};
 use wg_2024::drone::Drone;
 use wg_2024::network::NodeId;
 use wg_2024::packet::{Packet, PacketType};
@@ -12,10 +13,10 @@ use wg_internal::drone::DroneOptions;
 /// Example of drone implementation
 struct MyDrone {
     id: NodeId,
-    sim_contr_send: Sender<Command>,
-    sim_contr_recv: Receiver<Command>,
+    controller_send: Sender<ControllerCommand>,
+    controller_recv: Receiver<DroneCommand>,
     packet_recv: Receiver<Packet>,
-    pdr: u8,
+    pdr: f32,
     packet_send: HashMap<NodeId, Sender<Packet>>,
 }
 
@@ -23,67 +24,125 @@ impl Drone for MyDrone {
     fn new(options: DroneOptions) -> Self {
         Self {
             id: options.id,
-            sim_contr_send: options.sim_contr_send,
-            sim_contr_recv: options.sim_contr_recv,
+            controller_send: options.controller_send,
+            controller_recv: options.controller_recv,
             packet_recv: options.packet_recv,
-            pdr: (options.pdr * 100.0) as u8,
+            pdr: options.pdr,
             packet_send: HashMap::new(),
         }
     }
 
     fn run(&mut self) {
-        self.run_internal();
-    }
-}
-
-impl MyDrone {
-    fn run_internal(&mut self) {
         loop {
             select! {
-                recv(self.packet_recv) -> packet_res => {
-                    if let Ok(packet) = packet_res {
-                    // each match branch may call a function to handle it to make it more readable
-            match packet.pack_type {
-                            PacketType::Nack(_nack) => unimplemented!(),
-                            PacketType::Ack(_ack) => unimplemented!(),
-                            PacketType::MsgFragment(_fragment) => unimplemented!(),
-                            PacketType::FloodRequest(_) => unimplemented!(),
-                            PacketType::FloodResponse(_) => unimplemented!(),
-                        }
+                recv(self.packet_recv) -> packet => {
+                    if let Ok(packet) = packet {
+                        self.handle_packet(packet);
                     }
                 },
-                recv(self.sim_contr_recv) -> command_res => {
-                    if let Ok(_command) = command_res {
-                        // handle the simulation controller's command
+                recv(self.controller_recv) -> command => {
+                    if let Ok(command) = command {
+                        if let DroneCommand::Crash = command {
+                            println!("drone {} crashed", self.id);
+                            break;
+                        }
+                        self.handle_command(command);
                     }
                 }
             }
         }
     }
+}
 
-    fn add_channel(&mut self, id: NodeId, sender: Sender<Packet>) {
-        self.packet_send.insert(id, sender);
+impl MyDrone {
+    fn handle_packet(&mut self, packet: Packet) {
+        match packet.pack_type {
+            PacketType::Nack(_nack) => todo!(),
+            PacketType::Ack(_ack) => todo!(),
+            PacketType::MsgFragment(_fragment) => todo!(),
+            PacketType::FloodRequest(_flood_request) => todo!(),
+            PacketType::FloodResponse(_flood_response) => todo!(),
+        }
     }
+    fn handle_command(&mut self, command: DroneCommand) {
+        match command {
+            DroneCommand::AddNeighbor(_node_id, _sender) => todo!(),
+            DroneCommand::RemoveNeighbor(_node_id) => todo!(),
+            DroneCommand::SetPacketDropRate(_pdr) => todo!(),
+            DroneCommand::Crash => unreachable!(),
+        }
+    }
+}
 
-    // fn remove_channel(...) {...}
+struct SimulationController {
+    drones: HashMap<NodeId, Sender<DroneCommand>>,
+    recv: Receiver<ControllerCommand>,
+}
+
+impl SimulationController {
+    fn crash_all(&mut self) {
+        for (_, sender) in self.drones.iter() {
+            sender.send(DroneCommand::Crash).unwrap();
+        }
+    }
+}
+
+fn parse_config(file: &str) -> Config {
+    let file_str = fs::read_to_string(file).unwrap();
+    toml::from_str(&file_str).unwrap()
 }
 
 fn main() {
-    // Something like this will be done
-    // by the initialization controller
-    let handler = thread::spawn(move || {
-        let id = 1;
-        let (sim_contr_send, sim_contr_recv) = crossbeam_channel::unbounded();
-        let (_packet_send, packet_recv) = crossbeam_channel::unbounded();
-        let mut drone = MyDrone::new(DroneOptions {
-            id,
-            sim_contr_recv,
-            sim_contr_send,
-            packet_recv,
-            pdr: 0.1,
-        });
+    let config = parse_config("examples/drone/config.toml");
 
-        drone.run();
-    });
-    handler.join().ok();
+    let mut controller_drones = HashMap::new();
+    let (controller_send, controller_recv) = unbounded();
+
+    let mut packet_channels = HashMap::new();
+    for drone in config.drone.iter() {
+        packet_channels.insert(drone.id, unbounded());
+    }
+    for client in config.client.iter() {
+        packet_channels.insert(client.id, unbounded());
+    }
+    for server in config.server.iter() {
+        packet_channels.insert(server.id, unbounded());
+    }
+
+    let mut handles = Vec::new();
+    for drone in config.drone.into_iter() {
+        // controller
+        let (controller_drone_send, controller_drone_recv) = unbounded();
+        controller_drones.insert(drone.id, controller_drone_send);
+        let controller_send = controller_send.clone();
+        // packet
+        let packet_recv = packet_channels[&drone.id].1.clone();
+        let packet_send = drone
+            .connected_node_ids
+            .into_iter()
+            .map(|id| (id, packet_channels[&id].0.clone()))
+            .collect();
+
+        handles.push(thread::spawn(move || {
+            let mut drone = MyDrone::new(DroneOptions {
+                id: drone.id,
+                controller_recv: controller_drone_recv,
+                controller_send: controller_send.clone(),
+                packet_recv,
+                pdr: drone.pdr,
+            });
+            drone.packet_send = packet_send;
+
+            drone.run();
+        }));
+    }
+    let mut controller = SimulationController {
+        drones: controller_drones,
+        recv: controller_recv,
+    };
+    controller.crash_all();
+
+    while let Some(handle) = handles.pop() {
+        handle.join().unwrap();
+    }
 }
