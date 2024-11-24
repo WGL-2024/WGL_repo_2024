@@ -19,12 +19,7 @@ trait Server {
         })
     }
 
-    fn on_request_arrived(
-        &mut self,
-        source_id: NodeId,
-        session_id: u64,
-        raw_content: String,
-    ) {
+    fn on_request_arrived(&mut self, source_id: NodeId, session_id: u64, raw_content: String) {
         if raw_content == "ServerType" {
             let _server_type = Self::get_sever_type();
             // send response
@@ -83,11 +78,7 @@ impl Server for ChatServer {
 
 fn main() {
     let mut server = ChatServer;
-    server.on_request_arrived(
-        1,
-        1,
-        ChatRequest::Register(1).stringify(),
-    );
+    server.on_request_arrived(1, 1, ChatRequest::Register(1).stringify());
     server.on_request_arrived(
         1,
         1,
@@ -96,11 +87,7 @@ fn main() {
             to: 2,
             message: "Hello".to_string(),
         }
-            .stringify(),
+        .stringify(),
     );
-    server.on_request_arrived(
-        1,
-        1,
-        "ServerType".to_string(),
-    );
+    server.on_request_arrived(1, 1, "ServerType".to_string());
 }
