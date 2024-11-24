@@ -7,25 +7,20 @@ trait Server {
     type ResponseType: Response;
 
     fn compose_message(
-        routing_header: SourceRoutingHeader,
         source_id: NodeId,
         session_id: u64,
         raw_content: String,
     ) -> Result<Message<Self::RequestType>, String> {
         let content = Self::RequestType::from_string(raw_content)?;
         Ok(Message {
-            routing_header,
-            message_data: MessageData {
-                session_id,
-                source_id,
-                content,
-            },
+            session_id,
+            source_id,
+            content,
         })
     }
 
     fn on_request_arrived(
         &mut self,
-        routing_header: SourceRoutingHeader,
         source_id: NodeId,
         session_id: u64,
         raw_content: String,
@@ -35,9 +30,9 @@ trait Server {
             // send response
             return;
         }
-        match Self::compose_message(routing_header, source_id, session_id, raw_content) {
+        match Self::compose_message(source_id, session_id, raw_content) {
             Ok(message) => {
-                let response = self.handle_request(message.message_data.content);
+                let response = self.handle_request(message.content);
                 self.send_response(response);
             }
             Err(str) => panic!("{}", str),
@@ -89,19 +84,11 @@ impl Server for ChatServer {
 fn main() {
     let mut server = ChatServer;
     server.on_request_arrived(
-        SourceRoutingHeader {
-            hops: vec![1, 2, 3],
-            hop_index: 0,
-        },
         1,
         1,
         ChatRequest::Register(1).stringify(),
     );
     server.on_request_arrived(
-        SourceRoutingHeader {
-            hops: vec![1, 2, 3],
-            hop_index: 0,
-        },
         1,
         1,
         ChatRequest::SendMessage {
@@ -109,13 +96,9 @@ fn main() {
             to: 2,
             message: "Hello".to_string(),
         }
-        .stringify(),
+            .stringify(),
     );
     server.on_request_arrived(
-        SourceRoutingHeader {
-            hops: vec![1, 2, 3],
-            hop_index: 0,
-        },
         1,
         1,
         "ServerType".to_string(),
