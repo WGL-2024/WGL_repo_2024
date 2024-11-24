@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use wg_network::{NodeId, SourceRoutingHeader};
 
 #[derive(Debug, Clone)]
@@ -51,7 +51,11 @@ impl Request for MediaRequest {}
 pub enum ChatRequest {
     ClientList,
     Register(NodeId),
-    SendMessage { from: NodeId, to: NodeId, message: String },
+    SendMessage {
+        from: NodeId,
+        to: NodeId,
+        message: String,
+    },
 }
 
 impl DroneSend for ChatRequest {}

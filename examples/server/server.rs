@@ -1,4 +1,4 @@
-﻿use wg_2024::network::topology::ServerType;
+use wg_2024::network::topology::ServerType;
 use wg_2024::network::*;
 use wg_2024::packet::*;
 
@@ -6,7 +6,12 @@ trait Server {
     type RequestType: Request;
     type ResponseType: Response;
 
-    fn compose_message(routing_header: SourceRoutingHeader, source_id: NodeId, session_id: u64, raw_content: String) -> Result<Message<Self::RequestType>, String> {
+    fn compose_message(
+        routing_header: SourceRoutingHeader,
+        source_id: NodeId,
+        session_id: u64,
+        raw_content: String,
+    ) -> Result<Message<Self::RequestType>, String> {
         let content = Self::RequestType::from_string(raw_content)?;
         Ok(Message {
             routing_header,
@@ -18,7 +23,13 @@ trait Server {
         })
     }
 
-    fn on_request_arrived(&mut self, routing_header: SourceRoutingHeader, source_id: NodeId, session_id: u64, raw_content: String) {
+    fn on_request_arrived(
+        &mut self,
+        routing_header: SourceRoutingHeader,
+        source_id: NodeId,
+        session_id: u64,
+        raw_content: String,
+    ) {
         if raw_content == "ServerType" {
             let _server_type = Self::get_sever_type();
             // send response
@@ -29,7 +40,7 @@ trait Server {
                 let response = self.handle_request(message.message_data.content);
                 self.send_response(response);
             }
-            Err(str) => panic!("{}", str)
+            Err(str) => panic!("{}", str),
         }
     }
 
@@ -58,7 +69,11 @@ impl Server for ChatServer {
                 println!("Registering {}", id);
                 ChatResponse::ClientList(vec![1, 2])
             }
-            ChatRequest::SendMessage { message, to, from: _ } => {
+            ChatRequest::SendMessage {
+                message,
+                to,
+                from: _,
+            } => {
                 println!("Sending message \"{}\" to {}", message, to);
                 // effectively forward message
                 ChatResponse::MessageSent
@@ -73,7 +88,36 @@ impl Server for ChatServer {
 
 fn main() {
     let mut server = ChatServer;
-    server.on_request_arrived(SourceRoutingHeader { hops: vec![1, 2, 3], hop_index: 0 }, 1, 1, ChatRequest::Register(1).stringify());
-    server.on_request_arrived(SourceRoutingHeader { hops: vec![1, 2, 3], hop_index: 0 }, 1, 1, ChatRequest::SendMessage { from: 1, to: 2, message: "Hello".to_string() }.stringify());
-    server.on_request_arrived(SourceRoutingHeader { hops: vec![1, 2, 3], hop_index: 0 }, 1, 1, "ServerType".to_string());
+    server.on_request_arrived(
+        SourceRoutingHeader {
+            hops: vec![1, 2, 3],
+            hop_index: 0,
+        },
+        1,
+        1,
+        ChatRequest::Register(1).stringify(),
+    );
+    server.on_request_arrived(
+        SourceRoutingHeader {
+            hops: vec![1, 2, 3],
+            hop_index: 0,
+        },
+        1,
+        1,
+        ChatRequest::SendMessage {
+            from: 1,
+            to: 2,
+            message: "Hello".to_string(),
+        }
+        .stringify(),
+    );
+    server.on_request_arrived(
+        SourceRoutingHeader {
+            hops: vec![1, 2, 3],
+            hop_index: 0,
+        },
+        1,
+        1,
+        "ServerType".to_string(),
+    );
 }
