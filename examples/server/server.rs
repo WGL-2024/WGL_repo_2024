@@ -1,5 +1,5 @@
-﻿use wg_2024::network::*;
-use wg_2024::network::topology::ServerType;
+﻿use wg_2024::network::topology::ServerType;
+use wg_2024::network::*;
 use wg_2024::packet::*;
 
 trait Server {
@@ -7,7 +7,7 @@ trait Server {
     type ResponseType: Response;
 
     fn compose_message(routing_header: SourceRoutingHeader, source_id: NodeId, session_id: u64, raw_content: String) -> Result<Message<Self::RequestType>, String> {
-        let content = Self::RequestType::deserialize(raw_content)?;
+        let content = Self::RequestType::from_string(raw_content)?;
         Ok(Message {
             routing_header,
             message_data: MessageData {
@@ -73,7 +73,7 @@ impl Server for ChatServer {
 
 fn main() {
     let mut server = ChatServer;
-    server.on_request_arrived(SourceRoutingHeader { hops: vec![1, 2, 3], hop_index: 0 }, 1, 1, "Register(1)".to_string());
-    server.on_request_arrived(SourceRoutingHeader { hops: vec![1, 2, 3], hop_index: 0 }, 1, 1, "SendMessage { message: \"Hello\", to: 2, from: 1 }".to_string());
-    server.on_request_arrived(SourceRoutingHeader { hops: vec![1, 2, 3], hop_index: 0 }, 1, 1, "ClientList".to_string());
+    server.on_request_arrived(SourceRoutingHeader { hops: vec![1, 2, 3], hop_index: 0 }, 1, 1, ChatRequest::Register(1).stringify());
+    server.on_request_arrived(SourceRoutingHeader { hops: vec![1, 2, 3], hop_index: 0 }, 1, 1, ChatRequest::SendMessage { from: 1, to: 2, message: "Hello".to_string() }.stringify());
+    server.on_request_arrived(SourceRoutingHeader { hops: vec![1, 2, 3], hop_index: 0 }, 1, 1, "ServerType".to_string());
 }

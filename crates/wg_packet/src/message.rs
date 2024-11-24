@@ -1,145 +1,87 @@
+use serde::{Deserialize, Serialize};
+use serde::de::DeserializeOwned;
 use wg_network::{NodeId, SourceRoutingHeader};
 
 #[derive(Debug, Clone)]
-pub struct Message<M: Serializable> {
+pub struct Message<M: DroneSend> {
     pub message_data: MessageData<M>,
     pub routing_header: SourceRoutingHeader,
 }
 
 // Only part fragmentized
 #[derive(Debug, Clone)]
-pub struct MessageData<M: Serializable> {
+pub struct MessageData<M: DroneSend> {
     pub source_id: NodeId,
     pub session_id: u64,
     pub content: M,
 }
 
-pub trait Serializable {
-    fn serialize(&self) -> String;
-    fn deserialize(serialized: String) -> Result<Self, String>
-    where
-        Self: Sized;
+pub trait DroneSend: Serialize + DeserializeOwned {
+    fn stringify(&self) -> String {
+        serde_json::to_string(self).unwrap()
+    }
+    fn from_string(raw: String) -> Result<Self, String> {
+        serde_json::from_str(raw.as_str()).map_err(|e| e.to_string())
+    }
 }
 
-pub trait Request: Serializable {}
-pub trait Response: Serializable {}
+pub trait Request: DroneSend {}
+pub trait Response: DroneSend {}
 
 // ReqServerType,
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TextRequest {
     TextList,
     Text(u64),
 }
 
-impl Serializable for TextRequest {
-    fn serialize(&self) -> String {
-        match self {
-            TextRequest::TextList => "TextList".to_string(),
-            TextRequest::Text(id) => format!("Text({})", id),
-        }
-    }
-
-    fn deserialize(serialized: String) -> Result<Self, String> {
-        if serialized == "TextList" {
-            Ok(TextRequest::TextList)
-        } else if let Ok(id) = serialized
-            .trim_start_matches("Text(")
-            .trim_end_matches(')')
-            .parse()
-        {
-            Ok(TextRequest::Text(id))
-        } else {
-            Err("Failed to deserialize TextRequest".to_string())
-        }
-    }
-}
-
+impl DroneSend for TextRequest {}
 impl Request for TextRequest {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MediaRequest {
     MediaList,
     Media(u64),
 }
 
-impl Serializable for MediaRequest {
-    fn serialize(&self) -> String {
-        todo!()
-    }
-    fn deserialize(_: String) -> Result<Self, String> {
-        todo!()
-    }
-}
-
+impl DroneSend for MediaRequest {}
 impl Request for MediaRequest {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ChatRequest {
     ClientList,
     Register(NodeId),
     SendMessage { from: NodeId, to: NodeId, message: String },
 }
 
-impl Serializable for ChatRequest {
-    fn serialize(&self) -> String {
-        todo!()
-    }
-    fn deserialize(_: String) -> Result<Self, String> {
-        todo!()
-    }
-}
-
+impl DroneSend for ChatRequest {}
 impl Request for ChatRequest {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TextResponse {
     TextList(Vec<u64>),
     Text(String),
     NotFound,
 }
 
-impl Serializable for TextResponse {
-    fn serialize(&self) -> String {
-        todo!()
-    }
-    fn deserialize(_: String) -> Result<Self, String> {
-        todo!()
-    }
-}
-
+impl DroneSend for TextResponse {}
 impl Response for TextResponse {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MediaResponse {
     MediaList(Vec<u64>),
     Media(Vec<u8>), // should we use some other type?
 }
 
-impl Serializable for MediaResponse {
-    fn serialize(&self) -> String {
-        todo!()
-    }
-    fn deserialize(_: String) -> Result<Self, String> {
-        todo!()
-    }
-}
-
+impl DroneSend for MediaResponse {}
 impl Response for MediaResponse {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ChatResponse {
     ClientList(Vec<NodeId>),
     MessageFrom { from: NodeId, message: Vec<u8> },
     MessageSent,
 }
 
-impl Serializable for ChatResponse {
-    fn serialize(&self) -> String {
-        todo!()
-    }
-    fn deserialize(_: String) -> Result<Self, String> {
-        todo!()
-    }
-}
-
+impl DroneSend for ChatResponse {}
 impl Response for ChatResponse {}
