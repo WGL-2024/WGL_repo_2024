@@ -329,7 +329,6 @@ pub enum ControllerCommand {
     PacketSent(Packet),
     PacketDropped(Packet),
 }
-
 ```
 
 The Simulation Controller can execute the following tasks:
