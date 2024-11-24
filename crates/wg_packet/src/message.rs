@@ -1,16 +1,9 @@
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use wg_network::{NodeId, SourceRoutingHeader};
+use wg_network::NodeId;
 
 #[derive(Debug, Clone)]
 pub struct Message<M: DroneSend> {
-    pub message_data: MessageData<M>,
-    pub routing_header: SourceRoutingHeader,
-}
-
-// Only part fragmentized
-#[derive(Debug, Clone)]
-pub struct MessageData<M: DroneSend> {
     pub source_id: NodeId,
     pub session_id: u64,
     pub content: M,
