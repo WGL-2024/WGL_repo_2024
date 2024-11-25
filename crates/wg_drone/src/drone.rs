@@ -1,12 +1,12 @@
 use crossbeam_channel::{Receiver, Sender};
-use wg_controller::{ControllerCommand, DroneCommand};
+use wg_controller::{DroneCommand, NodeEvent};
 use wg_network::NodeId;
 use wg_packet::Packet;
 
 #[derive(Debug, Clone)]
 pub struct DroneOptions {
     pub id: NodeId,
-    pub controller_send: Sender<ControllerCommand>,
+    pub controller_send: Sender<NodeEvent>,
     pub controller_recv: Receiver<DroneCommand>,
     pub packet_recv: Receiver<Packet>,
     pub pdr: f32,

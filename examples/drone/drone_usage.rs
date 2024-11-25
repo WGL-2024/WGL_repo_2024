@@ -3,7 +3,7 @@ use crossbeam_channel::{select, unbounded, Receiver, Sender};
 use std::collections::HashMap;
 use std::{fs, thread};
 use wg_2024::config::Config;
-use wg_2024::controller::{ControllerCommand, DroneCommand};
+use wg_2024::controller::{DroneCommand, NodeEvent};
 use wg_2024::drone::Drone;
 use wg_2024::network::NodeId;
 use wg_2024::packet::{Packet, PacketType};
@@ -12,7 +12,7 @@ use wg_internal::drone::DroneOptions;
 /// Example of drone implementation
 struct MyDrone {
     id: NodeId,
-    controller_send: Sender<ControllerCommand>,
+    controller_send: Sender<NodeEvent>,
     controller_recv: Receiver<DroneCommand>,
     packet_recv: Receiver<Packet>,
     pdr: f32,
@@ -74,7 +74,7 @@ impl MyDrone {
 
 struct SimulationController {
     drones: HashMap<NodeId, Sender<DroneCommand>>,
-    recv: Receiver<ControllerCommand>,
+    node_event_recv: Receiver<NodeEvent>,
 }
 
 impl SimulationController {
@@ -94,7 +94,7 @@ fn main() {
     let config = parse_config("examples/drone/config.toml");
 
     let mut controller_drones = HashMap::new();
-    let (controller_send, controller_recv) = unbounded();
+    let (node_event_send, node_event_recv) = unbounded();
 
     let mut packet_channels = HashMap::new();
     for drone in config.drone.iter() {
@@ -112,7 +112,7 @@ fn main() {
         // controller
         let (controller_drone_send, controller_drone_recv) = unbounded();
         controller_drones.insert(drone.id, controller_drone_send);
-        let controller_send = controller_send.clone();
+        let node_event_send = node_event_send.clone();
         // packet
         let packet_recv = packet_channels[&drone.id].1.clone();
         let packet_send = drone
@@ -125,7 +125,7 @@ fn main() {
             let mut drone = MyDrone::new(DroneOptions {
                 id: drone.id,
                 controller_recv: controller_drone_recv,
-                controller_send: controller_send.clone(),
+                controller_send: node_event_send,
                 packet_recv,
                 pdr: drone.pdr,
             });
@@ -136,7 +136,7 @@ fn main() {
     }
     let mut controller = SimulationController {
         drones: controller_drones,
-        recv: controller_recv,
+        node_event_recv,
     };
     controller.crash_all();
 

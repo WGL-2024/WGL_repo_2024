@@ -325,7 +325,7 @@ pub enum DroneCommand {
 
 /// From drone to controller
 #[derive(Debug, Clone)]
-pub enum ControllerCommand {
+pub enum NodeEvent {
     PacketSent(Packet),
     PacketDropped(Packet),
 }
