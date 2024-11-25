@@ -21,7 +21,6 @@ pub enum PacketType {
 #[derive(Debug, Clone)]
 pub struct Nack {
     pub fragment_index: u64,
-    pub time_of_fail: std::time::Instant,
     pub nack_type: NackType,
 }
 
@@ -30,12 +29,12 @@ pub enum NackType {
     ErrorInRouting(NodeId), // contains id of not neighbor
     DestinationIsDrone,
     Dropped,
+    UnexpectedRecipient(NodeId),
 }
 
 #[derive(Debug, Clone)]
 pub struct Ack {
     pub fragment_index: u64,
-    pub time_received: std::time::Instant,
 }
 
 #[derive(Debug, Clone)]
