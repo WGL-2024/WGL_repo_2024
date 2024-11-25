@@ -74,7 +74,7 @@ A drone is characterized by a parameter called PDR(Packet Drop Rate), This param
 A drone can receive a `DroneCommand::Crash` message (shown in the [Simulation Controller section](https://github.com/WGL-2024/WGL_repo_2024/blob/main/AP-protocol.md#simulation-controller) and defined in `wg_2024::controller::DroneCommand`).
 
 ### Expected behavior
-From the moment the drone receives the message it must not send any other messages and its thread should return as soon as possible
+From the moment the drone receives the `DroneCommand::Crash` it must not send any other `Packet` nor `Message` and its thread should return as soon as possible
 
 > Note that this means that the drone crashing can lead to potentially any type of Packet being dropped, which is an option that must be considered by the Client/Server routing protocol
 
