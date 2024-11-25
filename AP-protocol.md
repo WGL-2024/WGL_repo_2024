@@ -74,7 +74,9 @@ A drone is characterized by a parameter called PDR(Packet Drop Rate), This param
 A drone can receive a `DroneCommand::Crash` message (shown in the [Simulation Controller section](https://github.com/WGL-2024/WGL_repo_2024/blob/main/AP-protocol.md#simulation-controller) and defined in `wg_2024::controller::DroneCommand`).
 
 ### Expected behavior
-The drone's thread should return as soon as possible.
+From the moment the drone receives the message it must not send any other messages and its thread should return as soon as possible
+
+> Note that this means that the drone crashing can lead to potentially any type of Packet being dropped, which is an option that must be considered by the Client/Server routing protocol
 
 ## Interacting with crashed drone
 Drones need to handle the possibility of being requested to send a `Packet` to a crashed drone
@@ -82,7 +84,7 @@ Drones need to handle the possibility of being requested to send a `Packet` to a
 ### Expected behavior
 Drones that get forwarded a `Packet` which has a crashed drone as the next hop should behave as if the crashed drone was not in their neighbors (return new Nack of `NackType::ErrorInRouting(<crashed_drone_id>)`)
 
-Drones are expected to remove from their `packet_send` Vector the `Sender` for the crashed drone as soon as possible
+Drones are expected to drop the `Sender<Message>` for the crashed drone as soon as possible
 
 > Note that this means that the Client/Server routing protocols will need to handle the unexpected `ErrorInRouting` Nacks
 
