@@ -25,11 +25,11 @@ Any number of drones, each formatted as:
 ```TOML
 [[drone]]
 id = "drone_id"
-connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
+connected_node_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
 pdr = "pdr"
 ```
 - note that the `pdr` is defined between 0 and 1 (0.05 = 5%).
-- note that `connected_drone_ids` cannot contain `drone_id` nor repetitions
+- note that `connected_node_ids` cannot contain `drone_id` nor repetitions
 
 ### Clients
 Any number of clients, each formatted as:
@@ -58,6 +58,8 @@ connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
 A drone is characterized by a parameter that regulates what to do when a packet is received, that thus influences the simulation. This parameter is provided in the Network Initialization File.
 
 Packet Drop Rate: The drone drops the received packet with probability equal to the Packet Drop Rate.
+
+The PDR can be up to 100%, and the routing algorithm of every group should find a way to eventually work around this.
 
 # Messages and fragments
 
@@ -261,13 +263,13 @@ To reassemble fragments into a single packet, a client or server uses the fragme
 
 2. It first checks the `session_id` in the header.
 
-3. If it has not received a fragment with the same `session_id`, then it creates a vector big enough where to copy the data of the fragments.
+3. If it has not received a fragment with the same `session_id`, then it creates a vector (`Vec<u8>` with capacity of
+   `total_n_fragments` * 80) where to copy the
+   data of the fragments;
 
-4. The client would need to create a `vec<u8>` with capacity of `total_n_fragments` * 80.
+4. It would then copy `length` elements of the `data` array at the correct offset in the vector.
 
-5.  It would then copy `file_size` elements of the `file` array at the correct offset in the vector.
-
-Note that, if there are more than one fragment, `file_size` must be 80 for all fragments except for the last.
+> Note: if there are more than one fragment, `length` must be 80 for all fragments except for the last.
 
 If the client or server has already received a fragment with the same `session_id`, then it just needs to copy the data of the fragment in the vector.
 
