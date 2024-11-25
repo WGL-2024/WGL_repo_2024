@@ -341,9 +341,7 @@ The Simulation Controller can send the following commands to drones:
 
 `Crash`: This command makes a drone crash. Upon receiving this command, the drone’s thread should return as soon as possible.
 
-`AddNeighbor(dst_id, crossbeam::Sender)`: This command adds `dst_id` to the drone neighbors, with `dst_id` crossbeam::Sender.
-
-`RemoveNeighbor(dst_id)`: This command removes `dst_id` from the drone neighbors.
+`AddSender(dst_id, crossbeam::Sender)`: This command adds `dst_id` to the drone neighbors, with `dst_id` crossbeam::Sender.
 
 `SetPacketDropRate(pdr)`: This command alters the pdr of a drone.
 

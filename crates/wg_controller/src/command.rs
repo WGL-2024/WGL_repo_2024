@@ -5,8 +5,7 @@ use wg_packet::Packet;
 /// From controller to drone
 #[derive(Debug, Clone)]
 pub enum DroneCommand {
-    AddNeighbor(NodeId, Sender<Packet>),
-    RemoveNeighbor(NodeId),
+    AddSender(NodeId, Sender<Packet>),
     SetPacketDropRate(f32),
     Crash,
 }

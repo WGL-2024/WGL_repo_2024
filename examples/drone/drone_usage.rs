@@ -1,5 +1,4 @@
 #![allow(unused)]
-
 use crossbeam_channel::{select, unbounded, Receiver, Sender};
 use std::collections::HashMap;
 use std::{fs, thread};
@@ -66,8 +65,7 @@ impl MyDrone {
     }
     fn handle_command(&mut self, command: DroneCommand) {
         match command {
-            DroneCommand::AddNeighbor(_node_id, _sender) => todo!(),
-            DroneCommand::RemoveNeighbor(_node_id) => todo!(),
+            DroneCommand::AddSender(_node_id, _sender) => todo!(),
             DroneCommand::SetPacketDropRate(_pdr) => todo!(),
             DroneCommand::Crash => unreachable!(),
         }
