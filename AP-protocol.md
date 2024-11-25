@@ -61,14 +61,30 @@ connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
 
 ### Additional requirements
 - note that the **Network Initialization File** should never contain two **nodes** with the same `id` value
+# Drone Behavior
+## Packet Drop Rate
 
-# Drone parameters: Packet Drop Rate
+A drone is characterized by a parameter called PDR(Packet Drop Rate), This parameter is provided in the Network Initialization File.
 
-A drone is characterized by a parameter that regulates what to do when a packet is received, that thus influences the simulation. This parameter is provided in the Network Initialization File.
+### Expected behavior
+ The drone drops the received packet with probability equal to the Packet Drop Rate.
 
-Packet Drop Rate: The drone drops the received packet with probability equal to the Packet Drop Rate.
+> Note that The PDR can be up to 100%, and the routing algorithm of every group should find a way to eventually work around this.
+## Crashing
+A drone can receive a `DroneCommand::Crash` message (shown in the [Simulation Controller section](https://github.com/WGL-2024/WGL_repo_2024/blob/main/AP-protocol.md#simulation-controller) and defined in `wg_2024::controller::DroneCommand`).
 
-The PDR can be up to 100%, and the routing algorithm of every group should find a way to eventually work around this.
+### Expected behavior
+The drone's thread should return as soon as possible.
+
+## Interacting with crashed drone
+Drones need to handle the possibility of being requested to send a `Packet` to a crashed drone
+
+### Expected behavior
+Drones that get forwarded a `Packet` which has a crashed drone as the next hop should behave as if the crashed drone was not in their neighbors (return new Nack of `NackType::ErrorInRouting(<crashed_drone_id>)`)
+
+Drones are expected to remove from their `packet_send` Vector the `Sender` for the crashed drone as soon as possible
+
+> Note that this means that the Client/Server routing protocols will need to handle the unexpected `ErrorInRouting` Nacks
 
 # Messages and fragments
 
