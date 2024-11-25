@@ -7,7 +7,6 @@ use wg_2024::controller::Command;
 use wg_2024::drone::Drone;
 use wg_2024::network::NodeId;
 use wg_2024::packet::{Packet, PacketType};
-use wg_internal::drone::DroneOptions;
 
 /// Example of drone implementation
 struct MyDrone {
@@ -15,19 +14,26 @@ struct MyDrone {
     sim_contr_send: Sender<Command>,
     sim_contr_recv: Receiver<Command>,
     packet_recv: Receiver<Packet>,
-    pdr: u8,
+    pdr: f32,
     packet_send: HashMap<NodeId, Sender<Packet>>,
 }
 
 impl Drone for MyDrone {
-    fn new(options: DroneOptions) -> Self {
+    fn new(
+        id: NodeId,
+        sim_contr_send: Sender<Command>,
+        sim_contr_recv: Receiver<Command>,
+        packet_send: HashMap<NodeId, Sender<Packet>>,
+        packet_recv: Receiver<Packet>,
+        pdr: f32,
+    ) -> Self {
         Self {
-            id: options.id,
-            sim_contr_send: options.sim_contr_send,
-            sim_contr_recv: options.sim_contr_recv,
-            packet_recv: options.packet_recv,
-            pdr: (options.pdr * 100.0) as u8,
-            packet_send: HashMap::new(),
+            id,
+            sim_contr_send,
+            sim_contr_recv,
+            packet_send,
+            packet_recv,
+            pdr,
         }
     }
 
@@ -76,14 +82,14 @@ fn main() {
         let (sim_contr_send, sim_contr_recv) = crossbeam_channel::unbounded();
         let (_packet_send, packet_recv) = crossbeam_channel::unbounded();
         let packet_send = HashMap::new();
-        let mut drone = MyDrone::new(DroneOptions {
+        let mut drone = MyDrone::new(
             id,
-            sim_contr_recv,
             sim_contr_send,
+            sim_contr_recv,
             packet_send,
             packet_recv,
-            pdr: 0.1,
-        });
+            0.1,
+        );
 
         drone.run();
     });
