@@ -8,6 +8,8 @@ members = ["crates/*"]
 
 [dependencies]
 wg_internal = { path = "crates/wg_internal" }
+serde = { version = "1.0.215", features = ["derive"] }
+serde_json = "1.0.133"
 
 [dev-dependencies]
 toml = "0.8.19"
@@ -26,5 +28,5 @@ name = "drone_usage"
 path = "examples/drone/drone_usage.rs"
 
 [[example]]
-name = "server"
-path = "examples/server/server.rs"
+name = "messages"
+path = "examples/message/message.rs"
