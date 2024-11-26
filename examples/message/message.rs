@@ -1,6 +1,3 @@
-mod server;
-
-use crate::server::Server;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use wg_2024::network::NodeId;
@@ -85,19 +82,3 @@ pub enum ChatResponse {
 
 impl DroneSend for ChatResponse {}
 impl Response for ChatResponse {}
-
-fn main() {
-    let mut server = server::ChatServer;
-    server.on_request_arrived(1, 1, ChatRequest::Register(1).stringify());
-    server.on_request_arrived(
-        1,
-        1,
-        ChatRequest::SendMessage {
-            from: 1,
-            to: 2,
-            message: "Hello".to_string(),
-        }
-        .stringify(),
-    );
-    server.on_request_arrived(1, 1, "ServerType".to_string());
-}
