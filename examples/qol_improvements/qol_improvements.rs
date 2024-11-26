@@ -1,4 +1,4 @@
-﻿use wg_2024::network::SourceRoutingHeader;
+use wg_2024::network::SourceRoutingHeader;
 use wg_2024::packet::{FloodRequest, Fragment, NodeType, Packet};
 
 fn main() {
@@ -18,7 +18,11 @@ fn main() {
     println!("sub_route(1..): {:?}", route.sub_route(1..));
 
     println!("----- Fragment -----");
-    let packet = Packet::new_fragment(route.clone(), 1, Fragment::from_string(0, 1, "Hello, World!".to_string()));
+    let packet = Packet::new_fragment(
+        route.clone(),
+        1,
+        Fragment::from_string(0, 1, "Hello, World!".to_string()),
+    );
     println!("small packet: {:?}", packet);
     let packet = Packet::new_fragment(
         route.clone(),
@@ -26,8 +30,8 @@ fn main() {
         Fragment::from_string(
             0,
             1,
-            "Nell mezzo del cammin di nostra vita, mi ritrovai per una selva oscura".to_string()
-        )
+            "Nell mezzo del cammin di nostra vita, mi ritrovai per una selva oscura".to_string(),
+        ),
     );
     println!("big packet: {:?}", packet);
 
