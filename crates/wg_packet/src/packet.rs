@@ -37,12 +37,12 @@ impl Packet {
         routing_header: SourceRoutingHeader,
         session_id: u64,
         fragment_index: u64,
-        nack_type: NackType,
+        nack: Nack,
     ) -> Self {
         Self {
             pack_type: PacketType::Nack(Nack {
                 fragment_index,
-                nack_type,
+                nack_type: nack,
             }),
             routing_header,
             session_id,
