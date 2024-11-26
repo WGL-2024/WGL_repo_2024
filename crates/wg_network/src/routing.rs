@@ -85,16 +85,20 @@ impl SourceRoutingHeader {
         clone
     }
     pub fn sub_route(&self, range: impl RangeBounds<usize>) -> SourceRoutingHeader {
-        let start = if let Bound::Included(start) = range.start_bound() {
-            *start
-        } else if let Bound::Excluded(start) = range.start_bound() {
-            start + 1
-        } else {
-            0
+        let start = match range.start_bound() {
+            Bound::Included(&start) => start,
+            Bound::Excluded(&start) => start + 1,
+            Bound::Unbounded => 0,
+        };
+
+        let end = match range.end_bound() {
+            Bound::Included(&end) => end + 1,
+            Bound::Excluded(&end) => end,
+            Bound::Unbounded => self.hops.len(),
         };
         SourceRoutingHeader {
             hop_index: self.hop_index - start,
-            hops: self.hops[range].to_vec(),
+            hops: self.hops[start..end].to_vec(),
         }
     }
 }
