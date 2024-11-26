@@ -127,9 +127,9 @@ fn main() {
                 controller_recv: controller_drone_recv,
                 controller_send: node_event_send,
                 packet_recv,
+                packet_send,
                 pdr: drone.pdr,
             });
-            drone.packet_send = packet_send;
 
             drone.run();
         }));
