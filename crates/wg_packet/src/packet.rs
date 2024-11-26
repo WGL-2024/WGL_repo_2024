@@ -36,14 +36,10 @@ impl Packet {
     pub fn new_nack(
         routing_header: SourceRoutingHeader,
         session_id: u64,
-        fragment_index: u64,
         nack: Nack,
     ) -> Self {
         Self {
-            pack_type: PacketType::Nack(Nack {
-                fragment_index,
-                nack_type: nack,
-            }),
+            pack_type: PacketType::Nack(nack),
             routing_header,
             session_id,
         }
