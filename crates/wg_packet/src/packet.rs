@@ -19,10 +19,16 @@ pub enum PacketType {
 }
 
 #[derive(Debug, Clone)]
-pub enum Nack {
+pub struct Nack {
+    pub fragment_index: u64,
+    pub nack_type: NackType,
+}
+
+#[derive(Debug, Clone)]
+pub enum NackType {
     ErrorInRouting(NodeId), // contains id of not neighbor
     DestinationIsDrone,
-    Dropped(u64), // fragment id of dropped fragment
+    Dropped,
     UnexpectedRecipient(NodeId),
 }
 
