@@ -10,6 +10,9 @@ pub struct SourceRoutingHeader {
     pub hops: Vec<NodeId>,
 }
 
+
+/// This prints something like this:
+/// 1 -> 2 -> 3 ->(4)-> 5
 impl Debug for SourceRoutingHeader {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(

@@ -108,6 +108,8 @@ pub struct Fragment {
     pub data: [u8; 80],
 }
 
+/// This prints something like this:
+/// Fragment { index: 1/2, data: 0xf219a352ddfc1b4a... + other 60 bytes }
 impl Debug for Fragment {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if self.length < 20 {
