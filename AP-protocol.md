@@ -61,6 +61,8 @@ connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
 
 ### Additional requirements
 - note that the **Network Initialization File** should never contain two **nodes** with the same `id` value
+- note that the **Network Initialization File** should represent a **connected** and **bidirectional** graph
+- note that the **Network Initialization File** should represent a network where clients and servers are at the edges of the network, which means that the graph obtained by removing clients and servers is still a **connected** graph
 
 # Drone parameters: Packet Drop Rate
 
