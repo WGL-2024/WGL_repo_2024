@@ -132,8 +132,7 @@ impl Debug for Fragment {
                 self.data
                     .iter()
                     .take(20)
-                    .map(|b| format!("{:02x}", b))
-                    .collect::<String>(),
+                    .fold(String::new(), |acc, b| acc + &format!("{:02x}", b)),
                 self.length - 20
             )
         }
