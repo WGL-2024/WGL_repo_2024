@@ -16,7 +16,11 @@ pub struct FloodRequest {
 
 impl FloodRequest {
     pub fn new(flood_id: u64, initiator_id: NodeId) -> Self {
-        Self { flood_id, initiator_id, path_trace: Vec::new() }
+        Self {
+            flood_id,
+            initiator_id,
+            path_trace: Vec::new(),
+        }
     }
     pub fn increment(&mut self, node_id: NodeId, node_type: NodeType) {
         let mut path_trace = self.path_trace.clone();

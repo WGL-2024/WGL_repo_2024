@@ -26,7 +26,8 @@ impl Debug for SourceRoutingHeader {
                     }
                 })
                 .collect::<Vec<_>>()
-                .join("->").trim()
+                .join("->")
+                .trim()
         )
     }
 }
