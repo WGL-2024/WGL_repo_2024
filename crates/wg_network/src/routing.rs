@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+use std::ops::Range;
 
 pub type NodeId = u8;
 
@@ -60,5 +61,20 @@ impl SourceRoutingHeader {
     }
     pub fn set_hop_index(&mut self, hop_index: usize) {
         self.hop_index = hop_index;
+    }
+    pub fn reverse(&mut self) {
+        self.hops.reverse();
+        self.hop_index = self.hops.len() - self.hop_index - 1;
+    }
+    pub fn get_reversed(&self) -> SourceRoutingHeader {
+        let mut clone = self.clone();
+        clone.reverse();
+        clone
+    }
+    pub fn sub_route(&self, range: Range<usize>) -> SourceRoutingHeader {
+        SourceRoutingHeader {
+            hop_index: self.hop_index - range.start,
+            hops: self.hops[range].to_vec(),
+        }
     }
 }
