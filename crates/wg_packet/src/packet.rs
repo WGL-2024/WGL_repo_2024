@@ -93,19 +93,3 @@ impl Debug for Fragment {
         }
     }
 }
-
-#[test]
-fn print_fragment() {
-    let mut data = [0u8; 80];
-    let bytes = "Nell mezzo del cammin di nostra vita".as_bytes();
-    let len = bytes.len().min(80);
-    data[..len].copy_from_slice(&bytes[..len]);
-    let frag = Packet::new_fragment(SourceRoutingHeader::with_first_hop(vec![1, 2, 3]), 0, Fragment {
-        fragment_index: 0,
-        total_n_fragments: 1,
-        length: len as u8,
-        data,
-    });
-
-    println!("{:?}", frag);
-}
