@@ -8,12 +8,12 @@ members = ["crates/*"]
 
 [dependencies]
 wg_internal = { path = "crates/wg_internal" }
-serde = { version = "1.0.215", features = ["derive"] }
-serde_json = "1.0.133"
 
 [dev-dependencies]
 toml = "0.8.19"
 crossbeam-channel = "0.5.13"
+serde = { version = "1.0.215", features = ["derive"] }
+serde_json = "1.0.133"
 
 [features]
 serialize = ["wg_internal/serialize"]
