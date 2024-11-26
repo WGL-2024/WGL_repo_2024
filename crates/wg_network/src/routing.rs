@@ -1,5 +1,6 @@
+use std::collections::Bound;
 use std::fmt::{Debug, Formatter};
-use std::ops::Range;
+use std::ops::RangeBounds;
 
 pub type NodeId = u8;
 
@@ -44,6 +45,12 @@ impl SourceRoutingHeader {
     pub fn increase_hop_index(&mut self) {
         self.hop_index += 1;
     }
+    pub fn decrease_hop_index(&mut self) {
+        self.hop_index -= 1;
+    }
+    pub fn reset_hop_index(&mut self) {
+        self.hop_index = 0;
+    }
     pub fn current_hop(&self) -> Option<NodeId> {
         self.hops.get(self.hop_index).cloned()
     }
@@ -52,6 +59,9 @@ impl SourceRoutingHeader {
     }
     pub fn is_last_hop(&self) -> bool {
         self.hop_index == self.hops.len() - 1
+    }
+    pub fn valid_hop_index(&self) -> bool {
+        self.hop_index < self.hops.len()
     }
     pub fn get_hops(&self) -> &Vec<NodeId> {
         &self.hops
@@ -74,9 +84,16 @@ impl SourceRoutingHeader {
         clone.reverse();
         clone
     }
-    pub fn sub_route(&self, range: Range<usize>) -> SourceRoutingHeader {
+    pub fn sub_route(&self, range: impl RangeBounds<usize>) -> SourceRoutingHeader {
+        let start = if let Bound::Included(start) = range.start_bound() {
+            *start
+        } else if let Bound::Excluded(start) = range.start_bound() {
+            start + 1
+        } else {
+            0
+        };
         SourceRoutingHeader {
-            hop_index: self.hop_index - range.start,
+            hop_index: self.hop_index - start,
             hops: self.hops[range].to_vec(),
         }
     }
