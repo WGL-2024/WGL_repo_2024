@@ -1,5 +1,5 @@
 #![allow(unused)]
-use crossbeam_channel::{select, unbounded, Receiver, Sender};
+use crossbeam_channel::{select_biased, unbounded, Receiver, Sender};
 use std::collections::HashMap;
 use std::{fs, thread};
 use wg_2024::config::Config;
@@ -33,12 +33,7 @@ impl Drone for MyDrone {
 
     fn run(&mut self) {
         loop {
-            select! {
-                recv(self.packet_recv) -> packet => {
-                    if let Ok(packet) = packet {
-                        self.handle_packet(packet);
-                    }
-                },
+            select_biased! {
                 recv(self.controller_recv) -> command => {
                     if let Ok(command) = command {
                         if let DroneCommand::Crash = command {
@@ -48,6 +43,11 @@ impl Drone for MyDrone {
                         self.handle_command(command);
                     }
                 }
+                recv(self.packet_recv) -> packet => {
+                    if let Ok(packet) = packet {
+                        self.handle_packet(packet);
+                    }
+                },
             }
         }
     }
