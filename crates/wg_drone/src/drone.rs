@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crossbeam_channel::{Receiver, Sender};
 use wg_controller::{DroneCommand, NodeEvent};
 use wg_network::NodeId;
@@ -9,6 +11,7 @@ pub struct DroneOptions {
     pub controller_send: Sender<NodeEvent>,
     pub controller_recv: Receiver<DroneCommand>,
     pub packet_recv: Receiver<Packet>,
+    pub packet_send: HashMap<NodeId, Sender<Packet>>,
     pub pdr: f32,
 }
 

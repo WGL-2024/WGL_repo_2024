@@ -13,9 +13,15 @@ type NodeId = u64;
 
 # Network Initializer
 
-The **Network Initializer** reads a local **Network Initialization File** that encodes the network topology and the drone parameters and, accordingly, spawns the node threads and sets up the Rust channels for communicating between nodes.
-
-> Importantly, the Network Initializer should also set up the Rust channels between the nodes and the Simulation Controller (see the Simulation Controller section).
+The **Network Initializer**:
+1. reads a local **Network Initialization File** that encodes the network topology and the drone parameters
+2. checks that the initialization file adheres to the formatting and restrictions defined in the section below
+3. checks that the initialization file represents a bidirectional graph
+4. according to the network topology, defined in the initialization file, performs the following actions(in no particular order):
+   - spawns the node threads
+   - spawns the simulation controller thread
+   - sets up the Rust channels for communicating between nodes that are connected in the topology
+   - sets up the Rust channels for communication between nodes and the simulation controller
 
 ## Network Initialization File
 The **Network Initialization File** is in the `.toml` format, and structured as explained below:
@@ -53,6 +59,9 @@ connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
 - note that a server cannot connect to other clients or servers
 - note that a server should be connected to at least two drones
 
+### Additional requirements
+- note that the **Network Initialization File** should never contain two **nodes** with the same `id` value
+
 # Drone parameters: Packet Drop Rate
 
 A drone is characterized by a parameter that regulates what to do when a packet is received, that thus influences the simulation. This parameter is provided in the Network Initialization File.
@@ -67,33 +76,72 @@ Recall that there are: Content servers (that is, Text and Media servers) and Com
 
 These servers exchange, respectively, Text server messages, Media server messages and Communication server messages. These are high-level messages. Recall that you must standardize and regulate their low-level counterparts (that is, fragments).
 
-# Source routing
+# Source Routing Protocol
 
 The fragments that circulate in the network are **source-routed** (except for the commands sent from and the events received by the Simulation Controller).
 
-Source routing refers to a technique where the sender of a data packet specifies the route the packet takes through the network. This is in contrast with conventional routing, where routers in the network determine the path incrementally based on the packet's destination.
+Source routing refers to a technique where the sender of a data packet specifies the route the packet takes through the network. This is in contrast with conventional routing, where routers in the network determine the path incrementally based on the packet's destination.
 
 The consequence is that drones do not need to maintain routing tables.
 
-As an example, consider the following simplified network:
+### How Source Routing Works
+
+When a client or server wants to send a message to another node, it performs the following steps:
+
+- **Route Computation**: The sender calculates the entire path to the destination node. This path includes the sender itself and all intermediate nodes leading to the destination.
+
+- **Creation of the Source Routing Header**: The sender constructs a header that contains:
+	- **`hops`**: A list of node IDs representing the route from the sender to the destination.
+	- **`hop_index`**: An index indicating the current position in the `hops` list. It starts at **1** because the first hop (`hops[0]`) is the sender itself.
+
+- **Packet Sending**: The sender attaches the source routing header to the packet and sends it to the first node in the route (the node at `hops[1]`).
+
+Note: it is not mandatory to follow this precise order.
+
+### Step-by-Step Example
+
+Consider the following simplified network topology:
 
 ![constellation](assets/costellation.png)
 
-Suppose that the client A wants to send a message to the server D.
+Suppose that client A wants to send a message to server D.
 
-It computes the route B→E→F→D, creates a **Source Routing Header** specifying route A→B→E→F→D, adds it to the packet and sends it to B.
+**Client A**:
 
-When B receives the packet, it sees that the next hop is E and sends the packet to it.
+- Computes the route: **A → B → E → F → D**.
+- Creates a source routing header:
+	- **`hops`**: `[A, B, E, F, D]`.
+	- **`hop_index`**: `1`.
+- Sends the packet to **B**, the first node after itself.
 
-When E receives the packet, it sees that the next hop is F and sends the packet to it.
+**At Each Node**:
 
-When F receives the packet, it sees that the next hop is D and sends the packet to it.
+1. **Node B**:
+	- Receives the packet.
+	- Determines that the next hop is **E**.
+	- Sends the packet to **E**.
 
-When D receives the packet, it sees there are no more hops so it must be the final destination: it can thus process the packet.
+2. **Node E**:
+	- Receives the packet.
+	- Determines that the next hop is **F**.
+	- Sends the packet to **F**.
+
+3. **Node F**:
+	- Receives the packet.
+	- Determines that the next hop is **D**.
+	- Sends the packet to **D**.
+
+4. **Node D**:
+	- Receives the packet.
+	- Sees that there are no more hops in the route.
+	- Processes the packet as the **final destination**.
+
+For detailed steps on how each drone processes packets, including verification, error handling, and forwarding, please refer to the [Drone Protocol](#drone-protocol) section.
+
 
 ```rust
 struct SourceRoutingHeader {
-	// must be set to 0 initially by the sender
+	// must be set to 1 initially by the sender
 	hop_index: usize,
 	// Vector of nodes with initiator and nodes to which the packet will be forwarded to.
 	hops: Vec<NodeId>
@@ -120,9 +168,6 @@ struct FloodRequest {
 	flood_id: u64,
 	/// ID of client or server
 	initiator_id: NodeId,
-	/// Time To Live, decremented at each hop to limit the query's lifespan.
-	/// When ttl reaches 0, we start a FloodResponse message that reaches back to the initiator
-	ttl: u8,
 	/// Records the nodes that have been traversed (to track the connections).
 	path_trace: Vec<(NodeId, NodeType)>
 }
@@ -131,21 +176,32 @@ struct FloodRequest {
 ### **Neighbor Response**
 
 When a neighbor node receives the flood request, it processes it based on the following rules:
+- If the flood ID has already been received:
+	- The drone adds itself to the `path_trace`.
+	- The drone creates a `FloodResponse` and sends it back.
 
-- If the flood request was not received earlier, the node forwards the updated packet to its neighbors (except the one it received the flood request from) decreasing the TTL by 1, otherwise set the TTL to 0.
-- If the TTL of the message is 0, build a `FloodResponse` and send it along the same path back to the initiator.
+- If the flood ID has not yet been received:
+	- The drone adds itself to the `path_trace`.
+	- **If it has neighbors** (excluding the one from which it received the `FloodRequest`):
+		- The drone forwards the packet to its neighbors (except the one from which it received the `FloodRequest`).
+	- **If it has no neighbors**, then:
+		- The drone creates a `FloodResponse` and sends it to the node from which it received the `FloodRequest`.
 
 ```rust
 struct FloodResponse {
 	flood_id: u64,
-	source_routing_header: SourceRoutingHeader,
 	path_trace: Vec<(NodeId, NodeType)>
 }
 ```
 
+#### Notes:
+- For the discovery protocol, `Packet`s of type `FloodRequest` and `FloodResponse` will be sent.
+- The `routing_header` of `Packet`s of type `FloodRequest` will be ignored (as the Packet is sent to all neighbors except the one from which it was received).
+- The `routing_header` of `Packet`s of type `FloodResponse`, on the other hand, determines the packet's path.
+
 ### **Recording Topology Information**
 
-For every flood response or acknowledgment the initiator receives, it updates its understanding of the graph:
+For every flood response the initiator receives, it updates its understanding of the graph:
 
 - If the node receives a flood response with a **path trace**, it records the paths between nodes. The initiator learns not only the immediate neighbors but also the connections between nodes further out.
 - Over time, as the query continues to flood, the initiator accumulates more information and can eventually reconstruct the entire graph's topology.
@@ -153,6 +209,8 @@ For every flood response or acknowledgment the initiator receives, it updates it
 ### **Termination Condition**
 
 The flood can terminate when:
+- A node receives a `FloodRequest` with a flood_id that has already been received.
+- A node receives a `FloodRequest` but has no neighbors to forward the request to.
 
 
 # **Client-Server Protocol: Fragments**
@@ -196,9 +254,8 @@ pub struct MessageData {
 If a drone receives a Message and can forward it to the next hop, it also sends an Ack to the client.
 
 ```rust
-pub struct Ack{
+pub struct Ack {
 	fragment_index: u64,
-	time_received: std::time::Instant
 }
 ```
 
@@ -214,7 +271,6 @@ This message cannot be dropped by drones due to Packet Drop Rate.
 ```rust
 pub struct Nack {
 	fragment_index: u64,
-	time_of_fail: std::time::Instant,
 	nack_type: NackType
 }
 
@@ -280,29 +336,86 @@ Once that the client or server has received all fragments (that is, `fragment_in
 Therefore, the packet is now a message that can be delivered.
 
 # Drone Protocol
-When a drone receives a packet, it **must** do the following:
 
-1. increase `hop_index` by 1
-2. obtain the (new `hop_index`) + 1 element of the `SourceRoutingHeader` vector `hops`, let's call it `next_hop`
-	* It **must ignore** intentionally to check `hop_index`.
+When a drone receives a packet, it **must** perform the following steps:
 
-3. if `next_hop`
-	* doesn't exist create a new packet of type Nack, precisely of type `DestinationIsDrone`. The packet must have the routing made of a vector but inverted and only contains the nodes from this drone to the sender. Send this packet as a normal packet. End here.
-	* if the `NodeId` is not a neighbor, then creates a new packet of type Nack, precisely of type `ErrorInRouting` with field the value of `NodeId` of next hop. Continue as other error.
+1. **Step 1**: Check if `hops[hop_index]` matches the drone's own `NodeId`.
+	- **If yes**, proceed to Step 2.
+	- **If no**, send a Nack with `UnexpectedRecipient` (including the drone's own `NodeId`) and terminate processing.
 
-4. Proceed as follows based on packet type:
+2. **Step 2**: Increment `hop_index` by **1**.
 
-### Flood Messages
-TODO  (If the packet is flood related, follow the rules in the flood section)
+3. **Step 3**: Determine if the drone is the final destination:
+	- **If `hop_index` equals the length of `hops`**, the drone is the final destination send a Nack with `DestinationIsDrone` and terminate processing.
+	- **If not**, proceed to Step 4.
 
-### Normal Messages
-1. check whether to drop or not the package based on the PDR,
+4. **Step 4**: Identify the next hop using `hops[hop_index]`, let's call it `next_hop`.
+	- **If `next_hop` is not a neighbor** of the drone, send a Nack with `ErrorInRouting` (including the problematic `NodeId` of `next_hop`) and terminate processing.
+	- **If `next_hop` is a neighbor**, proceed to Step 5.
 
-2. based on if the packets need to be dropped or not do:
+5. **Step 5**: Proceed based on the packet type:
 
-	* If is dropped, send back a Nack Packet with type `Dropped`. Follow the rules for sending errors as before.
+   - **Flood Messages**: If the packet is flood-related, follow the rules specified in the **Network Discovery Protocol** section.
 
-	* If it is not dropped, send the packets using the channel relative to the next hops in `SourceRoutingHeader`.
+   - **`MsgFragment`**:
+
+      a. **Check for Packet Drop**:
+      - Determine whether to drop the packet based on the drone's **Packet Drop Rate (PDR)**.
+
+      b. **If the packet is to be dropped**:
+      - Send back a Nack with type `Dropped`. The Nack should have a Source Routing Header containing the reversed path from the current drone back to the sender.
+      - Terminate processing.
+
+      c. **If the packet is not to be dropped**:
+      - Send the packet to `next_hop` using the appropriate channel.
+
+
+### Step-by-Step Example
+
+Consider the following simplified network topology:
+
+![constellation](assets/costellation.png)
+
+Suppose that client A wants to send a message to server D.
+
+**Client A**:
+
+- Computes the route: **A → B → E → F → D**.
+- Creates a source routing header:
+	- **`hops`**: `[A, B, E, F, D]`.
+	- **`hop_index`**: `1`.
+- Sends the packet to **B**, the first node after itself.
+
+**Detailed Steps**:
+
+1. **Node B**:
+	- Receives the packet with `hop_index = 1`.
+	- Checks: `hops[1] = B` matches its own ID.
+	- Increments `hop_index` to `2`.
+	- Next hop is `hops[2] = E`.
+	- Sends the packet to **E**.
+
+2. **Node E**:
+	- Receives the packet with `hop_index = 2`.
+	- Checks: `hops[2] = E` matches its own ID.
+	- Increments `hop_index` to `3`.
+	- Next hop is `hops[3] = F`.
+	- Sends the packet to **F**.
+
+3. **Node F**:
+	- Receives the packet with `hop_index = 3`.
+	- Checks: `hops[3] = F` matches its own ID.
+	- Increments `hop_index` to `4`.
+	- Next hop is `hops[4] = D`.
+	- Sends the packet to **D**.
+
+4. **Node D**:
+	- Receives the packet with `hop_index = 4`.
+	- Checks: `hops[4] = D` matches its own ID.
+	- Increments `hop_index` to `5`.
+	- Since `hop_index` equals the length of `hops`, there are no more hops.
+	- Concludes it is the **final destination** and processes the packet.
+
 
 ## Simulation
 TODO
