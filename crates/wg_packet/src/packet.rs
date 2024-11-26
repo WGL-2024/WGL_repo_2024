@@ -22,7 +22,7 @@ pub enum PacketType {
 pub enum Nack {
     ErrorInRouting(NodeId), // contains id of not neighbor
     DestinationIsDrone,
-    Dropped(u64), // fragment id of dropped fragment
+    Dropped(NodeId, u64), // (NodeId of the drone which dropped the packet, fragment id of dropped fragment)
     UnexpectedRecipient(NodeId),
 }
 
