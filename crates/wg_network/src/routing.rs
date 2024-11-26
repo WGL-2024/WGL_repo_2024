@@ -97,7 +97,7 @@ impl SourceRoutingHeader {
             Bound::Unbounded => self.hops.len(),
         };
         SourceRoutingHeader {
-            hop_index: self.hop_index - start,
+            hop_index: self.hop_index.max(start) - start,
             hops: self.hops[start..end].to_vec(),
         }
     }

@@ -22,9 +22,14 @@ impl FloodRequest {
             path_trace: Vec::new(),
         }
     }
-    pub fn increment(&mut self, node_id: NodeId, node_type: NodeType) {
+    pub fn increment(&self, node_id: NodeId, node_type: NodeType) -> FloodRequest {
         let mut path_trace = self.path_trace.clone();
         path_trace.push((node_id, node_type));
+        FloodRequest {
+            flood_id: self.flood_id,
+            initiator_id: self.initiator_id,
+            path_trace,
+        }
     }
     pub fn generate_response(&self) -> FloodResponse {
         let mut path_trace = self.path_trace.clone();

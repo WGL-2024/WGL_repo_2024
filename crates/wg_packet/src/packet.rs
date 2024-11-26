@@ -101,28 +101,49 @@ impl Debug for Fragment {
         if self.length < 20 {
             write!(
                 f,
-                "Fragment {{ index: {}/{}, data: 0x{} }}",
+                "Fragment {{ index: {} out of {}, data: 0x{} }}",
                 self.fragment_index + 1,
                 self.total_n_fragments,
                 self.data
                     .iter()
                     .take(self.length as usize)
-                    .map(|b| format!("{:02x}", b))
-                    .collect::<Vec<_>>()
-                    .join(" ")
+                    .fold(String::new(), |acc, b| format!("{acc}{b:02x}"))
             )
         } else {
             write!(
                 f,
-                "Fragment {{ index: {}/{}, data: 0x{}... + other {} bytes }}",
+                "Fragment {{ index: {} out of {}, data: 0x{}... + other {} bytes }}",
                 self.fragment_index + 1,
                 self.total_n_fragments,
                 self.data
                     .iter()
                     .take(20)
-                    .fold(String::new(), |acc, b| acc + &format!("{:02x}", b)),
+                    .fold(String::new(), |acc, b| format!("{acc}{b:02x}")),
                 self.length - 20
             )
+        }
+    }
+}
+
+impl Fragment {
+    pub fn new(fragment_index: u64, total_n_fragments: u64, data: [u8; 80]) -> Self {
+        let length = data.iter().position(|&b| b == 0).unwrap_or(80) as u8;
+        Self {
+            fragment_index,
+            total_n_fragments,
+            length,
+            data,
+        }
+    }
+    pub fn from_string(fragment_index: u64, total_n_fragments: u64, raw_data: String) -> Self {
+        let mut data = [0; 80];
+        let length = raw_data.len().min(80);
+        data[..length].copy_from_slice(raw_data.as_bytes());
+        Self {
+            fragment_index,
+            total_n_fragments,
+            length: length as u8,
+            data,
         }
     }
 }
