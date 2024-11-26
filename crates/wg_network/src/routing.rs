@@ -17,7 +17,7 @@ impl Debug for SourceRoutingHeader {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}",
+            "[ {} ]",
             self.hops
                 .iter()
                 .enumerate()
