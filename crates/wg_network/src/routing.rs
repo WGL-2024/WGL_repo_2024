@@ -36,12 +36,15 @@ impl Display for SourceRoutingHeader {
 }
 
 impl SourceRoutingHeader {
+    // INITIALIZATION
     pub fn initialize(hops: Vec<NodeId>) -> Self {
         Self { hop_index: 0, hops }
     }
     pub fn with_first_hop(hops: Vec<NodeId>) -> Self {
         Self { hop_index: 1, hops }
     }
+
+    // HOP INDEX MANIPULATION
     pub fn increase_hop_index(&mut self) {
         self.hop_index += 1;
     }
@@ -51,18 +54,36 @@ impl SourceRoutingHeader {
     pub fn reset_hop_index(&mut self) {
         self.hop_index = 0;
     }
+
+    // SPECIAL HOPS
+    pub fn source(&self) -> Option<NodeId> {
+        self.hops.get(0).cloned()
+    }
+    pub fn destination(&self) -> Option<NodeId> {
+        self.hops.last().cloned()
+    }
     pub fn current_hop(&self) -> Option<NodeId> {
         self.hops.get(self.hop_index).cloned()
     }
     pub fn next_hop(&self) -> Option<NodeId> {
         self.hops.get(self.hop_index + 1).cloned()
     }
+
+    // CHECKS
+    pub fn is_empty_route(&self) -> bool {
+        self.hops.is_empty()
+    }
+    pub fn is_first_hop(&self) -> bool {
+        !self.is_empty_route() && self.hop_index == 0
+    }
     pub fn is_last_hop(&self) -> bool {
-        self.hop_index == self.hops.len() - 1
+        !self.is_empty_route() && self.hop_index == self.hops.len() - 1
     }
     pub fn valid_hop_index(&self) -> bool {
-        self.hop_index < self.hops.len()
+        !self.is_empty_route() && self.hop_index < self.hops.len()
     }
+
+    // GETTERS AND SETTERS
     pub fn get_hops(&self) -> &Vec<NodeId> {
         &self.hops
     }
@@ -75,7 +96,10 @@ impl SourceRoutingHeader {
     pub fn set_hop_index(&mut self, hop_index: usize) {
         self.hop_index = hop_index;
     }
+
+    // WHOLE ROUTE MANIPULATION
     pub fn reverse(&mut self) {
+        if self.is_empty_route() { return; }
         self.hops.reverse();
         self.hop_index = self.hops.len() - self.hop_index - 1;
     }
@@ -84,7 +108,7 @@ impl SourceRoutingHeader {
         clone.reverse();
         clone
     }
-    pub fn sub_route(&self, range: impl RangeBounds<usize>) -> SourceRoutingHeader {
+    pub fn sub_route(&self, range: impl RangeBounds<usize>) -> Option<SourceRoutingHeader> {
         let start = match range.start_bound() {
             Bound::Included(&start) => start,
             Bound::Excluded(&start) => start + 1,
@@ -96,9 +120,24 @@ impl SourceRoutingHeader {
             Bound::Excluded(&end) => end,
             Bound::Unbounded => self.hops.len(),
         };
-        SourceRoutingHeader {
+
+        if end > self.hops.len() {
+            return None;
+        }
+
+        // this doesn't work well
+        if start > end {
+            let mut sub_route = SourceRoutingHeader {
+                hop_index: self.hop_index.max(end) - end,
+                hops: self.hops[end..start].to_vec(),
+            };
+            sub_route.reverse();
+            return Some(sub_route);
+        }
+
+        Some(SourceRoutingHeader {
             hop_index: self.hop_index.max(start) - start,
             hops: self.hops[start..end].to_vec(),
-        }
+        })
     }
 }

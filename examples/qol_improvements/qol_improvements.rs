@@ -4,18 +4,19 @@ use wg_2024::packet::{FloodRequest, Fragment, NodeType, Packet};
 fn main() {
     println!("----- SourceRoutingHeader -----");
     let mut route = SourceRoutingHeader::initialize(vec![1, 2, 3]);
-    println!("route: {:?}", route);
+    println!("route: {}", route);
     route.increase_hop_index();
-    println!("route: {:?}", route);
+    println!("route: {}", route);
     println!("current_hop: {:?}", route.current_hop());
     route.increase_hop_index();
-    println!("route: {:?}", route);
+    println!("route: {}", route);
     println!("next_hop: {:?}", route.next_hop());
-    println!("is_last_hop: {:?}", route.is_last_hop());
-    println!("get_reversed: {:?}", route.get_reversed());
+    println!("is_last_hop: {}", route.is_last_hop());
+    println!("get_reversed: {}", route.get_reversed());
     route.reset_hop_index();
-    println!("reset route: {:?}", route);
-    println!("sub_route(1..): {:?}", route.sub_route(1..));
+    println!("reset route: {}", route);
+    println!("sub_route(1..): {}", route.sub_route(1..).map(|r| r.to_string()).unwrap_or("None".to_string()));
+    println!("sub_route(2..0): {}", route.sub_route(2..0).map(|r| r.to_string()).unwrap_or("None".to_string()));
 
     println!("----- Fragment -----");
     let packet = Packet::new_fragment(
