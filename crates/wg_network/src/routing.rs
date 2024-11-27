@@ -99,7 +99,9 @@ impl SourceRoutingHeader {
 
     // WHOLE ROUTE MANIPULATION
     pub fn reverse(&mut self) {
-        if self.is_empty_route() { return; }
+        if self.is_empty_route() {
+            return;
+        }
         self.hops.reverse();
         self.hop_index = self.hops.len() - self.hop_index - 1;
     }

@@ -15,8 +15,20 @@ fn main() {
     println!("get_reversed: {}", route.get_reversed());
     route.reset_hop_index();
     println!("reset route: {}", route);
-    println!("sub_route(1..): {}", route.sub_route(1..).map(|r| r.to_string()).unwrap_or("None".to_string()));
-    println!("sub_route(2..0): {}", route.sub_route(2..0).map(|r| r.to_string()).unwrap_or("None".to_string()));
+    println!(
+        "sub_route(1..): {}",
+        route
+            .sub_route(1..)
+            .map(|r| r.to_string())
+            .unwrap_or("None".to_string())
+    );
+    println!(
+        "sub_route(2..0): {}",
+        route
+            .sub_route(2..0)
+            .map(|r| r.to_string())
+            .unwrap_or("None".to_string())
+    );
 
     println!("----- Fragment -----");
     let packet = Packet::new_fragment(
