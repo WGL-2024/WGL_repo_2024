@@ -1,10 +1,10 @@
 use std::collections::Bound;
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use std::ops::RangeBounds;
 
 pub type NodeId = u8;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SourceRoutingHeader {
     hop_index: usize, // must be set to 1 initially by the sender
     // Initiator and nodes to which the packet will be forwarded to.
@@ -13,7 +13,7 @@ pub struct SourceRoutingHeader {
 
 /// This prints something like this:
 /// 1 -> 2 -> 3 ->(4)-> 5
-impl Debug for SourceRoutingHeader {
+impl Display for SourceRoutingHeader {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,

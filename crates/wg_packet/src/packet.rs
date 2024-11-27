@@ -1,5 +1,5 @@
 use crate::{FloodRequest, FloodResponse};
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use wg_network::{NodeId, SourceRoutingHeader};
 
 // Is atomic unit to be sent
@@ -86,7 +86,7 @@ pub struct Ack {
     pub fragment_index: u64,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Fragment {
     pub fragment_index: u64,
     pub total_n_fragments: u64,
@@ -96,7 +96,7 @@ pub struct Fragment {
 
 /// This prints something like this:
 /// Fragment { index: 1/2, data: 0xf219a352ddfc1b4a... + other 60 bytes }
-impl Debug for Fragment {
+impl Display for Fragment {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if self.length < 20 {
             write!(
