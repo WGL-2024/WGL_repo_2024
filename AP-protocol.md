@@ -459,3 +459,5 @@ Notice that these messages are not subject to the rules of fragmentation, in fac
 - C -> S : message_for?(client_id, message)
 - S -> C : message_from!(client_id, message)
 - S -> C : error_wrong_client_id!
+
+This is just an example. You can implement the communication as you prefer as long as it's in line with the main protocol.
