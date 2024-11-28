@@ -10,13 +10,11 @@ pub enum DroneCommand {
     Crash,
 }
 
-// we consider two AddSender commands to be equal if they
-// tell a drone to add a Sender for the same neighbor id
 impl PartialEq for DroneCommand {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (DroneCommand::AddSender(node1, _), DroneCommand::AddSender(node2, _)) => {
-                node1 == node2
+            (DroneCommand::AddSender(node1, sender1), DroneCommand::AddSender(node2, sender2)) => {
+                node1 == node2 && sender1.same_channel(sender2)
             }
             (DroneCommand::SetPacketDropRate(rate1), DroneCommand::SetPacketDropRate(rate2)) => {
                 rate1 == rate2
