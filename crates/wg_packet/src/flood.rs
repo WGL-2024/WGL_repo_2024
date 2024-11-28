@@ -1,20 +1,20 @@
 use wg_network::NodeId;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum NodeType {
     Client,
     Drone,
     Server,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FloodRequest {
     pub flood_id: u64,
     pub initiator_id: NodeId,
     pub path_trace: Vec<(NodeId, NodeType)>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FloodResponse {
     pub flood_id: u64,
     pub path_trace: Vec<(NodeId, NodeType)>,
