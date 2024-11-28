@@ -1,6 +1,6 @@
 use wg_network::NodeId;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NodeType {
     Client,
     Drone,

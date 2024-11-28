@@ -18,7 +18,7 @@ pub enum PacketType {
     FloodResponse(FloodResponse),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Nack {
     ErrorInRouting(NodeId), // contains id of not neighbor
     DestinationIsDrone,
