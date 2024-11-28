@@ -428,3 +428,34 @@ The Simulation Controller can receive the following events from nodes:
 `PacketSent(packet)`: This event indicates that node has sent a packet. All the informations about the `src_id`, `dst_id` and `path` are stored in the packet routing header.
 
 `PacketDropped(packet)`: This event indicates that node has dropped a packet. All the informations about the `src_id`, `dst_id` and `path` are stored in the packet routing header.
+
+
+# **Client-Server Protocol: High-level Messages**
+
+These are the kinds of high-level messages that we expect can be exchanged between clients and servers.
+
+In the following, we write Protocol messages in this form:
+A -> B : name(params)
+where A and B are network nodes.
+In this case, a message of type `name` is sent from A to B. This message
+contains parameters `params`. Some messages do not provide parameters.
+Notice that these messages are not subject to the rules of fragmentation, in fact, they can exchange Strings, Vecs and other dynamically-sized types
+
+### Webserver Messages
+- C -> S : server_type?
+- S -> C : server_type!(type)
+- C -> S : files_list?
+- S -> C : files_list!(list_of_file_ids)
+- C -> S : file?(file_id)
+- S -> C : file!(file_size, file)
+- C -> S : media?(media_id)
+- S -> C : media!(media)
+- S -> C : error_requested_not_found!
+- S -> C : error_unsupported_request!
+### Chat Messages
+- C -> S : registration_to_chat,
+- C -> S : client_list?
+- S -> C : client_list!(list_of_client_ids)
+- C -> S : message_for?(client_id, message)
+- S -> C : message_from!(client_id, message)
+- S -> C : error_wrong_client_id!
