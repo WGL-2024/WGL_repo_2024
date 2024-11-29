@@ -42,5 +42,5 @@ pub struct Fragment {
     pub fragment_index: u64,
     pub total_n_fragments: u64,
     pub length: u8,
-    pub data: [u8; 80],
+    pub data: [u8; 128],
 }

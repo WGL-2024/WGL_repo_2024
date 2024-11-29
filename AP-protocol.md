@@ -318,7 +318,7 @@ pub struct Fragment {
 	total_n_fragments: u64,
 	length: u8,
 	// assembler will fragment/de-fragment data into bytes.
-	data: [u8; 80] // usable for image with .into_bytes()
+	data: [u8; 128] // usable for image with .into_bytes()
 }
 ```
 
