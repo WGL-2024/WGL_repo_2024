@@ -269,7 +269,9 @@ pub struct Ack {
 ### Nack
 If an error occurs, then a Nack is sent. A Nack can be of type:
 1. **ErrorInRouting**: If a drone receives a Message and the next hop specified in the Source Routing Header is not a neighbor of the drone, then it sends Error to the client.
+3. **DestinationIsDrone**: If a drone receives a Message which has as last hop the id of a drone.
 2. **Dropped**: If a drone receives a Message that must be dropped due to the Packet Drop Rate, then it sends Dropped to the client.
+4. **UnexpectedRecipient**: If a drone receives a Message from a drone that is not its immediate ancestor in the hop list.
 
 Source Routing Header contains the path to the client, which can be obtained by reversing the list of hops contained in the Source Routing Header of the problematic Message.
 
@@ -282,9 +284,10 @@ pub struct Nack {
 }
 
 pub enum NackType {
-	ErrorInRouting(NodeId), // contains id of not neighbor
-	DestinationIsDrone,
-	Dropped
+    ErrorInRouting(NodeId), // contains id of not neighbor
+    DestinationIsDrone,
+    Dropped,
+    UnexpectedRecipient(NodeId),
 }
 ```
 
