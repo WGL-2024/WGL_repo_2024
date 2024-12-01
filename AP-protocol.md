@@ -459,7 +459,7 @@ The Simulation Controller can execute the following tasks:
 The Simulation Controller can send the following commands to drones:
 
 `Crash`: This command makes a drone crash.
-The Simulation Controller first asks the drone that should crahs for the Id's of its neighbours. It then sends a 'CloseChannel' command to them, stopping the messages incoming to the drone that needs to be crushed.
+The Simulation Controller first asks the drone that should crash for the Id's of its neighbours. It then sends a 'CloseChannel' command to them, stopping the messages incoming to the drone that needs to be crushed.
 The crash command is then sent. Upon receiving this command, the drone’s thread should process all messages in its channel and then return as soon as possible.
 - FloodRequest can be lost during the process.
 - Ack, Nack and FloodResponse should still be forwarded to the next hop.
