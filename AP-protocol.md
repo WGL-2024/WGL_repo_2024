@@ -458,7 +458,16 @@ The Simulation Controller can execute the following tasks:
 
 The Simulation Controller can send the following commands to drones:
 
-`Crash`: This command makes a drone crash. Upon receiving this command, the drone’s thread should return as soon as possible.
+`Crash`: This command makes a drone crash.
+The Simulation Controller first asks the drone that should crahs for the Id's of its neighbours. It then sends a 'CloseChannel' command to them, stopping the messages incoming to the drone that needs to be crushed.
+The crash command is then sent. Upon receiving this command, the drone’s thread should process all messages in its channel and then return as soon as possible.
+- FloodRequest can be lost during the process.
+- Ack, Nack and FloodResponse should still be forwarded to the next hop.
+- Other types of packets will send an 'ErrorInRouting' Nack back, since the drone has crashed.
+
+`GetNghb()`: This command gives a vector of the neighbours of the chosen drone back to the Simulation Controller.
+
+`CloseChannel(nghb_id)`: This command close the channel with a neighbout drone.
 
 `AddSender(dst_id, crossbeam::Sender)`: This command adds `dst_id` to the drone neighbors, with `dst_id` crossbeam::Sender.
 
@@ -471,6 +480,8 @@ The Simulation Controller can receive the following events from nodes:
 `PacketSent(packet)`: This event indicates that node has sent a packet. All the informations about the `src_id`, `dst_id` and `path` are stored in the packet routing header.
 
 `PacketDropped(packet)`: This event indicates that node has dropped a packet. All the informations about the `src_id`, `dst_id` and `path` are stored in the packet routing header.
+
+`NghbNodes(Vec<NodeId>)`: This event contains all the neighbours of the drone.
 
 ## Note on commands and events
 
