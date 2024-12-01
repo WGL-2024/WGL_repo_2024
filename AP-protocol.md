@@ -437,6 +437,8 @@ The Simulation controller can send and receive different commands to/from the no
 /// From controller to drone
 #[derive(Debug, Clone)]
 pub enum DroneCommand {
+    GetNghb(),
+    CloseChannel(NodeId),
     AddSender(NodeId, Sender<Packet>),
     SetPacketDropRate(f32),
     Crash,
@@ -447,6 +449,7 @@ pub enum DroneCommand {
 pub enum NodeEvent {
     PacketSent(Packet),
     PacketDropped(Packet),
+    NghbNodes(Vec<NodeId>),
 }
 ```
 
