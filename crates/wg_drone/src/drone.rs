@@ -10,7 +10,6 @@ pub struct DroneOptions {
     pub id: NodeId,
     pub controller_send: Sender<NodeEvent>,
     pub controller_recv: Receiver<DroneCommand>,
-    pub controller_shortcut: Sender<Packet>,
     pub packet_recv: Receiver<Packet>,
     pub packet_send: HashMap<NodeId, Sender<Packet>>,
     pub pdr: f32,
