@@ -62,6 +62,12 @@ impl Packet {
             session_id,
         }
     }
+    pub fn get_fragment_index(&self) -> u64 {
+        match &self.pack_type {
+            PacketType::MsgFragment(fragment) => fragment.fragment_index,
+            _ => 0,
+        }
+    }
 }
 
 impl Display for Packet {
