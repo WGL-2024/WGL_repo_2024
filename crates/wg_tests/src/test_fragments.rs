@@ -119,7 +119,7 @@ pub fn generic_chain_fragment_drop<T: Drone + Send + 'static>() {
     let neighbours11 = HashMap::from([(12, d12_send.clone()), (1, c_send.clone())]);
     let mut drone = T::new( 11,
         unbounded().0,
-        d_command_recv,
+        d_command_recv.clone(),
         d_recv.clone(),
         neighbours11,
         0.0,);
@@ -128,7 +128,7 @@ pub fn generic_chain_fragment_drop<T: Drone + Send + 'static>() {
     let mut drone2 = T::new( 
         12,
         unbounded().0,
-        d_command_recv,
+        d_command_recv.clone(),
         d_recv.clone(),
         neighbours12,
         0.1,);
@@ -194,7 +194,7 @@ pub fn generic_chain_fragment_ack<T: Drone + Send + 'static>() {
     let neighbours11 = HashMap::from([(12, d12_send.clone()), (1, c_send.clone())]);
     let mut drone = T::new( 11,
         unbounded().0,
-        d_command_recv,
+        d_command_recv.clone(),
         d_recv.clone(),
         neighbours11,
         0.0,);
@@ -202,7 +202,7 @@ pub fn generic_chain_fragment_ack<T: Drone + Send + 'static>() {
     let neighbours12 = HashMap::from([(11, d_send.clone()), (21, s_send.clone())]);
     let mut drone2 = T::new( 12,
         unbounded().0,
-        d_command_recv,
+        d_command_recv.clone(),
         d_recv.clone(),
         neighbours12,
         0.0,);
