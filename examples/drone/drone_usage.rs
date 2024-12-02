@@ -8,7 +8,6 @@ use wg_2024::controller::{DroneCommand, NodeEvent};
 use wg_2024::drone::Drone;
 use wg_2024::network::NodeId;
 use wg_2024::packet::{Packet, PacketType};
-use wg_internal::drone::DroneOptions;
 
 /// Example of drone implementation
 struct MyDrone {
@@ -21,14 +20,21 @@ struct MyDrone {
 }
 
 impl Drone for MyDrone {
-    fn new(options: DroneOptions) -> Self {
+    fn new(
+        id: NodeId,
+        controller_send: Sender<NodeEvent>,
+        controller_recv: Receiver<DroneCommand>,
+        packet_recv: Receiver<Packet>,
+        packet_send: HashMap<NodeId, Sender<Packet>>,
+        pdr: f32,
+    ) -> Self {
         Self {
-            id: options.id,
-            controller_send: options.controller_send,
-            controller_recv: options.controller_recv,
-            packet_recv: options.packet_recv,
-            pdr: options.pdr,
-            packet_send: HashMap::new(),
+            id,
+            controller_send,
+            controller_recv,
+            packet_recv,
+            packet_send,
+            pdr,
         }
     }
 
@@ -92,7 +98,7 @@ fn parse_config(file: &str) -> Config {
 }
 
 fn main() {
-    let config = parse_config("examples/drone/config.toml");
+    let config = parse_config("./config.toml");
 
     let mut controller_drones = HashMap::new();
     let (node_event_send, node_event_recv) = unbounded();
@@ -123,14 +129,14 @@ fn main() {
             .collect();
 
         handles.push(thread::spawn(move || {
-            let mut drone = MyDrone::new(DroneOptions {
-                id: drone.id,
-                controller_recv: controller_drone_recv,
-                controller_send: node_event_send,
+            let mut drone = MyDrone::new(
+                drone.id,
+                node_event_send,
+                controller_drone_recv,
                 packet_recv,
                 packet_send,
-                pdr: drone.pdr,
-            });
+                drone.pdr,
+            );
 
             drone.run();
         }));
