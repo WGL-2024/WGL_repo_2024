@@ -34,7 +34,7 @@ pub enum NackType {
 
 #[derive(Debug, Clone)]
 pub struct Quack {
-    pub fragment_index: u6,
+    pub fragment_index: u64,
 }
 
 #[derive(Debug, Clone)]
