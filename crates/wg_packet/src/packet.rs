@@ -13,7 +13,7 @@ pub struct Packet {
 pub enum PacketType {
     MsgFragment(Fragment),
     Nack(Nack),
-    Ack(Ack),
+    Quack(Quack),
     FloodRequest(FloodRequest),
     FloodResponse(FloodResponse),
 }
@@ -33,8 +33,8 @@ pub enum NackType {
 }
 
 #[derive(Debug, Clone)]
-pub struct Ack {
-    pub fragment_index: u64,
+pub struct Quack {
+    pub fragment_index: u6,
 }
 
 #[derive(Debug, Clone)]
