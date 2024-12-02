@@ -23,10 +23,9 @@ The **Network Initializer**:
     - for 15 drones and 10 `impl`, each `impl` should be used at least once
     - for 5 drones and 10 `impl`, only some of the `impl` will be used
     - for 10 drones and 1 `impl`, all drones will have that `impl` 
-  - spawns the node threads
-  - spawns the simulation controller thread
   - sets up the Rust channels for communicating between nodes that are connected in the topology
   - sets up the Rust channels for communication between nodes and the simulation controller
+  - spawns the node threads
   - spawns the simulation controller thread
 
 ## Network Initialization File
