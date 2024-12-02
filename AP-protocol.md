@@ -480,8 +480,6 @@ The Simulation Controller can receive the following events from nodes:
 
 `PacketDropped(packet)`: This event indicates that node has dropped a packet. All the informations about the `src_id`, `dst_id` and `path` are stored in the packet routing header.
 
-`NghbNodes(Vec<NodeId>)`: This event contains all the neighbours of the drone.
-
 ## Note on commands and events
 
 Due to the importance of these messages, drones MUST prioritize handling commands from the simulation controller over messages and fragments.
