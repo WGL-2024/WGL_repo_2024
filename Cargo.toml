@@ -24,7 +24,9 @@ required-features = ["serialize"]
 [[example]]
 name = "drone_usage"
 path = "examples/drone/drone_usage.rs"
+required-features = ["serialize"]
 
 [[example]]
 name = "qol_improvements"
 path = "examples/qol_improvements/qol_improvements.rs"
+

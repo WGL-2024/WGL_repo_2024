@@ -18,10 +18,16 @@ The **Network Initializer**:
 2. checks that the initialization file adheres to the formatting and restrictions defined in the section below
 3. checks that the initialization file represents a bidirectional graph
 4. according to the network topology, defined in the initialization file, performs the following actions(in no particular order):
-   - spawns the node threads
-   - spawns the simulation controller thread
+   - initializes the drones, distributing the implementations bought from the other groups(`impl`) as evenly as possible, having at most a difference of 1 between the group with the most drones running and the one with the least:
+		- for 10 drones and 10 `impl`, 1 distinct `impl` for each drone
+		- for 15 drones and 10 `impl`, each `impl` should be used at least once
+		- for 5 drones and 10 `impl`, only some of the `impl` will be used
+		- for 10 drones and 1 `impl`, all drones will have that `impl` 
    - sets up the Rust channels for communicating between nodes that are connected in the topology
    - sets up the Rust channels for communication between nodes and the simulation controller
+   - spawns the node threads
+   - spawns the simulation controller thread
+
 
 ## Network Initialization File
 The **Network Initialization File** is in the `.toml` format, and structured as explained below:
@@ -61,6 +67,7 @@ connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
 
 ### Additional requirements
 - note that the **Network Initialization File** should never contain two **nodes** with the same `id` value
+- Note that the **Network Initialization File** does not define if a drone should use a particular implementation, every group is expected to import the drones they bought at the fair in the Network Initializer, and distribute them as explained in the previous section 
 
 # Drone parameters: Packet Drop Rate
 
@@ -423,29 +430,54 @@ TODO
 
 # Simulation Controller
 
-Like nodes, the **Simulation Controller** runs on a thread. It must retain a means of communication with all nodes of the network, even when drones go down.
+Like nodes, the **Simulation Controller** (SC) runs on a thread. It must retain a means of communication with all nodes of the network, even when drones go down. 
+The Simulation controller can send and receive different commands to/from the nodes (drones, clients and servers) through reserved channels. The list of available **commands** is as follows:
+
+```rust
+/// From controller to drone
+#[derive(Debug, Clone)]
+pub enum DroneCommand {
+    AddSender(NodeId, Sender<Packet>),
+    SetPacketDropRate(f32),
+    Crash,
+}
+
+/// From drone to controller
+#[derive(Debug, Clone)]
+pub enum NodeEvent {
+    PacketSent(Packet),
+    PacketDropped(Packet),
+}
+```
+
+The Simulation Controller can execute the following tasks:
+
+`Spawn`: This command adds a new drone to the network.
 
 ### Simulation commands
 
 The Simulation Controller can send the following commands to drones:
 
-`Crash`: This commands makes a drone crash. Upon receiving this command, the drone’s thread should return as soon as possible.
+`Crash`: This command makes a drone crash. Upon receiving this command, the drone’s thread should return as soon as possible.
 
-`AddSender(crossbeam::Sender, dst_id)`: This command provides a node with a new crossbeam Sender to send messages to node `dst_id`.
+`AddSender(dst_id, crossbeam::Sender)`: This command adds `dst_id` to the drone neighbors, with `dst_id` crossbeam::Sender.
 
-`AddReceiver(mpsc::Receiver, src_id)`: This command provides a node with a new crossbeam Receiver to receive messages from node `src_id`.
-
-`Spawn(id, code)`: This command adds a new drone to the network.
-
-`SetPacketDropRate(id, new_pdr)`:
+`SetPacketDropRate(pdr)`: This command alters the pdr of a drone.
 
 ### Simulation events
 
 The Simulation Controller can receive the following events from nodes:
 
-`Topology(node_id, list_of_connected_ids, metadata)`: This event indicates that node `node_id` has been added to the network and its current neighbors are `list_of_connected_ids`. It can carry metadata that could be useful to display, such as the PDR and DR of Drones.
+`PacketSent(packet)`: This event indicates that node has sent a packet. All the informations about the `src_id`, `dst_id` and `path` are stored in the packet routing header.
 
-`MessageSent(node_src, node_trg, metadata)`: This event indicates that node `node_src` has sent a message to `node_trg`. It can carry useful metadata that could be useful display, such as the kind of message, that would allow debugging what is going on in the network.
+`PacketDropped(packet)`: This event indicates that node has dropped a packet. All the informations about the `src_id`, `dst_id` and `path` are stored in the packet routing header.
+
+## Note on commands and events
+
+Due to the importance of these messages, drones MUST prioritize handling commands from the simulation controller over messages and fragments.
+
+This can be done by using [the select_biased! macro](https://shadow.github.io/docs/rust/crossbeam/channel/macro.select_biased.html) and putting the simulation controller channel first, as seen in the example.
+
 
 
 # **Client-Server Protocol: High-level Messages**
