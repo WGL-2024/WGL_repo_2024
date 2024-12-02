@@ -29,7 +29,7 @@ impl PartialEq for DroneCommand {
 /// From drone to controller
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "partial_eq", derive(PartialEq))]
-pub enum NodeEvent {
+pub enum DroneEvent {
     PacketSent(Packet),
     PacketDropped(Packet),
 }

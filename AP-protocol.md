@@ -415,9 +415,6 @@ pub enum DroneEvent {
     PacketSent(Packet),
     PacketDropped(Packet),
 }
-
-// For backward compatibility with the previous naming
-type NodeEvent = DroneEvent;
 ```
 
 The Simulation Controller can execute the following tasks:
@@ -428,11 +425,13 @@ The Simulation Controller can execute the following tasks:
 
 The Simulation Controller can send the following commands to drones:
 
-`Crash`: This command makes a drone crash. Upon receiving this command, the drone’s thread should return as soon as possible.
-
-`AddSender(dst_id, crossbeam::Sender)`: This command adds `dst_id` to the drone neighbors, with `dst_id` crossbeam::Sender.
+`AddSender(dst_id, crossbeam::Sender)`: This command adds `dst_id` to the drone neighbors, with `dst_id` crossbeam::
+Sender.
 
 `SetPacketDropRate(pdr)`: This command alters the pdr of a drone.
+
+`Crash`: This command makes a drone crash. Upon receiving this command, the drone’s thread should return as soon as
+possible.
 
 #### Note:
 Commands issued by the Simulation Controller must preserve the initial network requirements:
