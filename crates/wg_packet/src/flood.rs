@@ -23,21 +23,33 @@ impl FloodRequest {
             path_trace: Vec::new(),
         }
     }
-    pub fn increment(&self, node_id: NodeId, node_type: NodeType) -> FloodRequest {
-        let mut path_trace = self.path_trace.clone();
-        path_trace.push((node_id, node_type));
-        FloodRequest {
-            flood_id: self.flood_id,
-            initiator_id: self.initiator_id,
-            path_trace,
+    pub fn initialize(flood_id: u64, initiator_id: NodeId, initiator_type: NodeType) -> Self {
+        Self {
+            flood_id,
+            initiator_id,
+            path_trace: vec![(initiator_id, initiator_type)],
         }
     }
-    pub fn generate_response(&self) -> FloodResponse {
+    pub fn increment(&mut self, node_id: NodeId, node_type: NodeType) {
+        self.path_trace.push((node_id, node_type));
+    }
+    pub fn get_incremented(&self, node_id: NodeId, node_type: NodeType) -> FloodRequest {
+        let mut clone = self.clone();
+        clone.increment(node_id, node_type);
+        clone
+    }
+    pub fn generate_response_reversed(&self) -> FloodResponse {
         let mut path_trace = self.path_trace.clone();
         path_trace.reverse();
         FloodResponse {
             flood_id: self.flood_id,
             path_trace,
+        }
+    }
+    pub fn generate_response(&self) -> FloodResponse {
+        FloodResponse {
+            flood_id: self.flood_id,
+            path_trace: self.path_trace.clone(),
         }
     }
 }

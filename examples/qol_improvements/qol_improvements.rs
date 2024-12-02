@@ -51,8 +51,8 @@ fn main() {
     println!("----- Flood -----");
     let flood_request = FloodRequest::new(1, 1);
     println!("flood_request: {}", flood_request);
-    let incremented = flood_request.increment(2, NodeType::Client);
+    let incremented = flood_request.get_incremented(2, NodeType::Client);
     println!("incremented: {}", incremented);
-    let response = incremented.generate_response();
+    let response = incremented.generate_response_reversed();
     println!("response: {}", response);
 }
