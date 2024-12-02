@@ -8,3 +8,6 @@ wg_network = { path = "../wg_network" }
 wg_drone = { path = "../wg_drone" }
 wg_packet = { path = "../wg_packet" }
 crossbeam-channel = "0.5.13"
+
+[features]
+partial_eq = []

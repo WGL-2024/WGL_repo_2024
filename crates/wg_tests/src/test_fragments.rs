@@ -113,7 +113,7 @@ pub fn generic_chain_fragment_drop<T: Drone + Send + 'static>() {
     // Drone 11
     let (d_send, d_recv) = unbounded();
     // Drone 12
-    let (d12_send, d12_recv) = unbounded();
+    let (d12_send, _d12_recv) = unbounded();
     // SC - needed to not make the drone crash
     let (_d_command_send, d_command_recv) = unbounded();
 
@@ -191,7 +191,7 @@ pub fn generic_chain_fragment_ack<T: Drone + Send + 'static>() {
     // Drone 11
     let (d_send, d_recv) = unbounded();
     // Drone 12
-    let (d12_send, d12_recv) = unbounded();
+    let (d12_send, _d12_recv) = unbounded();
     // SC - needed to not make the drone crash
     let (_d_command_send, d_command_recv) = unbounded();
 
