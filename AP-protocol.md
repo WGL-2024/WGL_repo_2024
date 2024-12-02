@@ -466,8 +466,6 @@ The crash command is then sent. Upon receiving this command, the drone’s threa
 - Ack, Nack and FloodResponse should still be forwarded to the next hop.
 - Other types of packets will send an 'ErrorInRouting' Nack back, since the drone has crashed.
 
-`GetNghb()`: This command gives a vector of the neighbours of the chosen drone back to the Simulation Controller.
-
 `CloseChannel(nghb_id)`: This command close the channel with a neighbour drone.
 
 `AddSender(dst_id, crossbeam::Sender)`: This command adds `dst_id` to the drone neighbors, with `dst_id` crossbeam::Sender.
