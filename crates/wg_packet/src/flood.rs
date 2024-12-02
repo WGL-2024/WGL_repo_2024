@@ -1,6 +1,6 @@
 use wg_network::NodeId;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NodeType {
     Client,
     Drone,
@@ -8,6 +8,7 @@ pub enum NodeType {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "partial_eq", derive(PartialEq))]
 pub struct FloodRequest {
     pub flood_id: u64,
     pub initiator_id: NodeId,
@@ -15,6 +16,7 @@ pub struct FloodRequest {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "partial_eq", derive(PartialEq))]
 pub struct FloodResponse {
     pub flood_id: u64,
     pub path_trace: Vec<(NodeId, NodeType)>,
