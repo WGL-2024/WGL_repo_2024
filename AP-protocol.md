@@ -423,7 +423,7 @@ The Simulation Controller can execute the following tasks:
 
 The Simulation Controller can send the following commands to drones:
 
-`Crash`: This command makes a drone crash. Upon receiving this command, the drone’s thread should return as soon as possible. 
+`Crash`: This command makes a drone crash. Upon receiving this command, the drone’s thread should return as soon as possible.
 
 `AddSender(dst_id, crossbeam::Sender)`: This command adds `dst_id` to the drone neighbors, with `dst_id` crossbeam::Sender.
 
