@@ -10,6 +10,7 @@ pub enum NodeType {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "partial_eq", derive(PartialEq))]
 pub struct FloodRequest {
     pub flood_id: u64,
     pub initiator_id: NodeId,
@@ -71,6 +72,7 @@ impl Display for FloodRequest {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "partial_eq", derive(PartialEq))]
 pub struct FloodResponse {
     pub flood_id: u64,
     pub path_trace: Vec<(NodeId, NodeType)>,
