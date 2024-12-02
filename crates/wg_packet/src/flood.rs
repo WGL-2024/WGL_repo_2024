@@ -1,5 +1,6 @@
+use crate::Packet;
 use std::fmt::Display;
-use wg_network::NodeId;
+use wg_network::{NodeId, SourceRoutingHeader};
 
 #[derive(Debug, Clone)]
 pub enum NodeType {
@@ -16,6 +17,7 @@ pub struct FloodRequest {
 }
 
 impl FloodRequest {
+    /// Creates a new flood request with the given initiator id.
     pub fn new(flood_id: u64, initiator_id: NodeId) -> Self {
         Self {
             flood_id,
@@ -23,6 +25,7 @@ impl FloodRequest {
             path_trace: Vec::new(),
         }
     }
+    /// Initializes the flood request with the given initiator id and type.
     pub fn initialize(flood_id: u64, initiator_id: NodeId, initiator_type: NodeType) -> Self {
         Self {
             flood_id,
@@ -30,6 +33,7 @@ impl FloodRequest {
             path_trace: vec![(initiator_id, initiator_type)],
         }
     }
+    /// Increments the path trace by one node.
     pub fn increment(&mut self, node_id: NodeId, node_type: NodeType) {
         self.path_trace.push((node_id, node_type));
     }
@@ -38,19 +42,23 @@ impl FloodRequest {
         clone.increment(node_id, node_type);
         clone
     }
-    pub fn generate_response_reversed(&self) -> FloodResponse {
-        let mut path_trace = self.path_trace.clone();
-        path_trace.reverse();
-        FloodResponse {
-            flood_id: self.flood_id,
-            path_trace,
-        }
-    }
-    pub fn generate_response(&self) -> FloodResponse {
-        FloodResponse {
-            flood_id: self.flood_id,
-            path_trace: self.path_trace.clone(),
-        }
+    /// Generates a response packet to the flood request.
+    pub fn generate_response(&self, session_id: u64) -> Packet {
+        let source_routing = SourceRoutingHeader::initialize(
+            self.path_trace
+                .iter()
+                .map(|(id, _)| id.clone())
+                .rev()
+                .collect(),
+        );
+        Packet::new_flood_response(
+            source_routing,
+            session_id,
+            FloodResponse {
+                flood_id: self.flood_id,
+                path_trace: self.path_trace.clone(),
+            },
+        )
     }
 }
 
