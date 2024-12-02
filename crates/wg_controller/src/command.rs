@@ -5,7 +5,6 @@ use wg_packet::Packet;
 /// From controller to drone
 #[derive(Debug, Clone)]
 pub enum DroneCommand {
-    GetNghb(),
     CloseChannel(NodeId),
     AddSender(NodeId, Sender<Packet>),
     SetPacketDropRate(f32),
