@@ -1,8 +1,8 @@
 mod message;
 
+use crate::message::{ChatRequest, ChatResponse, DroneSend, Message, Request, Response};
 use wg_2024::network::topology::ServerType;
 use wg_2024::network::*;
-use crate::message::{ChatRequest, ChatResponse, DroneSend, Message, Request, Response};
 
 pub trait Server {
     type RequestType: Request;
@@ -89,7 +89,7 @@ fn main() {
             to: 2,
             message: "Hello".to_string(),
         }
-            .stringify(),
+        .stringify(),
     );
     server.on_request_arrived(1, 1, "ServerType".to_string());
 }
