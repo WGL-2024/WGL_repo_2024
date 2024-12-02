@@ -437,7 +437,7 @@ The Simulation controller can send and receive different commands to/from the no
 /// From controller to drone
 #[derive(Debug, Clone)]
 pub enum DroneCommand {
-    CloseChannel(NodeId),
+    RemoveSender(NodeId),
     AddSender(NodeId, Sender<Packet>),
     SetPacketDropRate(f32),
     Crash,
@@ -466,7 +466,7 @@ The crash command is then sent. Upon receiving this command, the drone’s threa
 - Ack, Nack and FloodResponse should still be forwarded to the next hop.
 - Other types of packets will send an 'ErrorInRouting' Nack back, since the drone has crashed.
 
-`CloseChannel(nghb_id)`: This command close the channel with a neighbour drone.
+`RemoveSender(nghb_id)`: This command close the channel with a neighbour drone.
 
 `AddSender(dst_id, crossbeam::Sender)`: This command adds `dst_id` to the drone neighbors, with `dst_id` crossbeam::Sender.
 
