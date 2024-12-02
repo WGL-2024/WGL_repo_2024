@@ -28,6 +28,8 @@ The **Network Initializer**:
   - spawns the node threads
   - spawns the simulation controller thread
 
+  > Note that all the channels created by the Network Initializer, and by extension also those created by the Simulation Controller during the simulation, must be `unbounded` channels
+
 ## Network Initialization File
 The **Network Initialization File** is in the `.toml` format, and structured as explained below:
 
