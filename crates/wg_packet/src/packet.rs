@@ -179,8 +179,8 @@ impl Display for Fragment {
 }
 
 impl Fragment {
-    pub fn new(fragment_index: u64, total_n_fragments: u64, data: [u8; 80]) -> Self {
-        let length = data.iter().position(|&b| b == 0).unwrap_or(80) as u8;
+    pub fn new(fragment_index: u64, total_n_fragments: u64, data: [u8; FRAGMENT_DSIZE]) -> Self {
+        let length = data.iter().position(|&b| b == 0).unwrap_or(FRAGMENT_DSIZE) as u8;
         Self {
             fragment_index,
             total_n_fragments,
@@ -189,8 +189,8 @@ impl Fragment {
         }
     }
     pub fn from_string(fragment_index: u64, total_n_fragments: u64, raw_data: String) -> Self {
-        let mut data = [0; 80];
-        let length = raw_data.len().min(80);
+        let mut data = [0; FRAGMENT_DSIZE];
+        let length = raw_data.len().min(FRAGMENT_DSIZE);
         data[..length].copy_from_slice(raw_data.as_bytes());
         Self {
             fragment_index,
