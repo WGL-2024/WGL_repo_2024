@@ -20,11 +20,11 @@ pub enum PacketType {
 
 #[derive(Debug, Clone)]
 pub struct Nack {
-    pub fragment_index: u64,
+    pub fragment_index: u64, // If the packet is not a fragment, it's considered as a whole, so fragment_index will be 0.
     pub nack_type: NackType,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NackType {
     ErrorInRouting(NodeId), // contains id of not neighbor
     DestinationIsDrone,
