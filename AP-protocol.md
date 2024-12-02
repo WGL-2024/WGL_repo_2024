@@ -429,6 +429,15 @@ The Simulation Controller can send the following commands to drones:
 
 `SetPacketDropRate(pdr)`: This command alters the pdr of a drone.
 
+#### Note:
+Commands issued by the Simulation Controller must preserve the initial network requirements:
+
+- The network graph must remain connected.
+- Each client must remain connected to at least one and at most two nodes.
+- Each server must remain connected to at least two nodes.
+
+It is the responsibility of the Simulation Controller to validate these conditions before executing any command.
+
 ### Simulation events
 
 The Simulation Controller can receive the following events from nodes:
