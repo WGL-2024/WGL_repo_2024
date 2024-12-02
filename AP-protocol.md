@@ -293,7 +293,7 @@ pub struct Fragment {
 	total_n_fragments: u64,
 	length: u8,
 	// assembler will fragment/de-fragment data into bytes.
-	data: [u8; 80] // usable for image with .into_bytes()
+	data: [u8; 128] // usable for image with .into_bytes()
 }
 ```
 
@@ -430,6 +430,15 @@ The Simulation Controller can send the following commands to drones:
 `AddSender(dst_id, crossbeam::Sender)`: This command adds `dst_id` to the drone neighbors, with `dst_id` crossbeam::Sender.
 
 `SetPacketDropRate(pdr)`: This command alters the pdr of a drone.
+
+#### Note:
+Commands issued by the Simulation Controller must preserve the initial network requirements:
+
+- The network graph must remain connected.
+- Each client must remain connected to at least one and at most two nodes.
+- Each server must remain connected to at least two nodes.
+
+It is the responsibility of the Simulation Controller to validate these conditions before executing any command.
 
 ### Simulation events
 
