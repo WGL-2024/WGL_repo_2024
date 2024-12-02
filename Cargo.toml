@@ -12,6 +12,8 @@ wg_internal = { path = "crates/wg_internal" }
 [dev-dependencies]
 toml = "0.8.19"
 crossbeam-channel = "0.5.13"
+serde = { version = "1.0.215", features = ["derive"] }
+serde_json = "1.0.133"
 
 [features]
 serialize = ["wg_internal/serialize"]
@@ -27,6 +29,9 @@ path = "examples/drone/drone_usage.rs"
 required-features = ["serialize"]
 
 [[example]]
+name = "messages"
+path = "examples/message/server.rs"
+
+[[example]]
 name = "qol_improvements"
 path = "examples/qol_improvements/qol_improvements.rs"
-
