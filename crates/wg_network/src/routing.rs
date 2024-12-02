@@ -38,12 +38,12 @@ impl Display for SourceRoutingHeader {
 impl SourceRoutingHeader {
     // INITIALIZATION
     /// Initializes the route with the given hops.
-    /// The hop index is set to 0.
+    /// **The hop index is set to 0.**
     pub fn initialize(hops: Vec<NodeId>) -> Self {
         Self { hop_index: 0, hops }
     }
     /// Initializes the route with the given hops.
-    /// The hop index is set to 1.
+    /// **The hop index is set to 1.**
     pub fn with_first_hop(hops: Vec<NodeId>) -> Self {
         Self { hop_index: 1, hops }
     }
@@ -63,23 +63,23 @@ impl SourceRoutingHeader {
     }
 
     // SPECIAL HOPS
-    /// Returns the source node of the route.
+    /// Returns the source node of the route if present.
     pub fn source(&self) -> Option<NodeId> {
         self.hops.get(0).cloned()
     }
-    /// Returns the destination node of the route.
+    /// Returns the destination node of the route if present.
     pub fn destination(&self) -> Option<NodeId> {
         self.hops.last().cloned()
     }
-    /// Returns the current hop of the route.
+    /// Returns the current hop of the route if present.
     pub fn current_hop(&self) -> Option<NodeId> {
         self.hops.get(self.hop_index).cloned()
     }
-    /// Returns the next hop of the route.
+    /// Returns the next hop of the route if present.
     pub fn next_hop(&self) -> Option<NodeId> {
         self.hops.get(self.hop_index + 1).cloned()
     }
-    /// Returns the previous hop of the route.
+    /// Returns the previous hop of the route if present.
     pub fn previous_hop(&self) -> Option<NodeId> {
         if self.is_first_hop() {
             return None;
