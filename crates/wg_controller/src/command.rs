@@ -5,6 +5,7 @@ use wg_packet::Packet;
 /// From controller to drone
 #[derive(Debug, Clone)]
 pub enum DroneCommand {
+    RemoveSender(NodeId),
     AddSender(NodeId, Sender<Packet>),
     SetPacketDropRate(f32),
     Crash,
@@ -32,4 +33,5 @@ impl PartialEq for DroneCommand {
 pub enum NodeEvent {
     PacketSent(Packet),
     PacketDropped(Packet),
+    ControllerShortcut(Packet), //Used for direct routing of Ack, Nack and FloodResponse
 }
