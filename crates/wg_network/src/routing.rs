@@ -105,6 +105,12 @@ impl SourceRoutingHeader {
         !self.is_empty_route() && self.hop_index < self.hops.len()
     }
 
+    // HOPS MANIPULATION
+    /// Appends a hop to the route.
+    pub fn append_hop(&mut self, hop: NodeId) {
+        self.hops.push(hop);
+    }
+
     // WHOLE ROUTE MANIPULATION
     /// Reverses the route.
     pub fn reverse(&mut self) {

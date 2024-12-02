@@ -53,6 +53,6 @@ fn main() {
     println!("flood_request: {}", flood_request);
     let incremented = flood_request.get_incremented(2, NodeType::Client);
     println!("incremented: {}", incremented);
-    let response = incremented.generate_response_reversed();
+    let response = incremented.generate_response(1);
     println!("response: {}", response);
 }

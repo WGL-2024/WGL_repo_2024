@@ -44,13 +44,15 @@ impl FloodRequest {
     }
     /// Generates a response packet to the flood request.
     pub fn generate_response(&self, session_id: u64) -> Packet {
-        let source_routing = SourceRoutingHeader::initialize(
+        let mut source_routing = SourceRoutingHeader::initialize(
             self.path_trace
                 .iter()
-                .map(|(id, _)| id.clone())
+                .cloned()
+                .map(|(id, _)| id)
                 .rev()
                 .collect(),
         );
+        source_routing.append_hop(self.initiator_id);
         Packet::new_flood_response(
             source_routing,
             session_id,
