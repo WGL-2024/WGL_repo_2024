@@ -65,7 +65,7 @@ impl SourceRoutingHeader {
     // SPECIAL HOPS
     /// Returns the source node of the route if present.
     pub fn source(&self) -> Option<NodeId> {
-        self.hops.get(0).cloned()
+        self.hops.first().cloned()
     }
     /// Returns the destination node of the route if present.
     pub fn destination(&self) -> Option<NodeId> {
