@@ -15,6 +15,7 @@ crossbeam-channel = "0.5.13"
 
 [features]
 serialize = ["wg_internal/serialize"]
+partial_eq = ["wg_internal/partial_eq"] 
 
 [[example]]
 name = "parser"

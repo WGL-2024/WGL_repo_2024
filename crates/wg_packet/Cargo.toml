@@ -5,3 +5,6 @@ edition = "2021"
 
 [dependencies]
 wg_network = { path = "../wg_network" }
+
+[features]
+partial_eq = []
