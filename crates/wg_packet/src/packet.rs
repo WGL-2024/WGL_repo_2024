@@ -1,6 +1,8 @@
 use crate::{FloodRequest, FloodResponse};
 use wg_network::{NodeId, SourceRoutingHeader};
 
+pub const FRAGMENT_DSIZE: usize = 128;
+
 // Is atomic unit to be sent
 #[derive(Debug, Clone)]
 pub struct Packet {
@@ -42,5 +44,5 @@ pub struct Fragment {
     pub fragment_index: u64,
     pub total_n_fragments: u64,
     pub length: u8,
-    pub data: [u8; 128],
+    pub data: [u8; FRAGMENT_DSIZE],
 }
