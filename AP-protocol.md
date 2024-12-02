@@ -448,7 +448,6 @@ pub enum DroneCommand {
 pub enum NodeEvent {
     PacketSent(Packet),
     PacketDropped(Packet),
-    NghbNodes(Vec<NodeId>),
 }
 ```
 
