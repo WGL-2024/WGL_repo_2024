@@ -12,3 +12,4 @@ wg_packet = { path = "../wg_packet" }
 
 [features]
 serialize = ["wg_config/serialize"]
+partial_eq = ["wg_controller/partial_eq","wg_packet/partial_eq","wg_network/partial_eq"]
