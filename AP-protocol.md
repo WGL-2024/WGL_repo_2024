@@ -18,23 +18,22 @@ The **Network Initializer**:
 2. checks that the initialization file adheres to the formatting and restrictions defined in the section below
 3. checks that the initialization file represents a bidirectional graph
 4. according to the network topology, defined in the initialization file, performs the following actions(in no particular order):
-   - initializes the drones, distributing the implementations bought from the other groups(`impl`) as evenly as possible, having at most a difference of 1 between the group with the most drones running and the one with the least:
-		- for 10 drones and 10 `impl`, 1 distinct `impl` for each drone
-		- for 15 drones and 10 `impl`, each `impl` should be used at least once
-		- for 5 drones and 10 `impl`, only some of the `impl` will be used
-		- for 10 drones and 1 `impl`, all drones will have that `impl` 
-   - sets up the Rust channels for communicating between nodes that are connected in the topology
-   - sets up the Rust channels for communication between nodes and the simulation controller
-   - spawns the node threads
-   - spawns the simulation controller thread
-
+  - initializes the drones, distributing the implementations bought from the other groups(`impl`) as evenly as possible, having at most a difference of 1 between the group with the most drones running and the one with the least:
+    - for 10 drones and 10 `impl`, 1 distinct `impl` for each drone
+    - for 15 drones and 10 `impl`, each `impl` should be used at least once
+    - for 5 drones and 10 `impl`, only some of the `impl` will be used
+    - for 10 drones and 1 `impl`, all drones will have that `impl` 
+  - sets up the Rust channels for communicating between nodes that are connected in the topology
+  - sets up the Rust channels for communication between nodes and the simulation controller
+  - spawns the node threads
+  - spawns the simulation controller thread
 
 ## Network Initialization File
 The **Network Initialization File** is in the `.toml` format, and structured as explained below:
 
 ### Drones
 Any number of drones, each formatted as:
-```TOML
+```toml
 [[drone]]
 id = "drone_id"
 connected_node_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
@@ -45,7 +44,7 @@ pdr = "pdr"
 
 ### Clients
 Any number of clients, each formatted as:
-```TOML
+```toml
 [[client]]
 id = "client_id"
 connected_drone_ids = ["connected_id1", "..."] # max 2 entries
@@ -56,7 +55,7 @@ connected_drone_ids = ["connected_id1", "..."] # max 2 entries
 
 ### Servers
 Any number of servers, each formatted as:
-```TOML
+```toml
 [[server]]
 id = "server_id"
 connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."] # at least 2 entries
@@ -66,8 +65,8 @@ connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
 - note that a server should be connected to at least two drones
 
 ### Additional requirements
-- note that the **Network Initialization File** should never contain two **nodes** with the same `id` value
-- Note that the **Network Initialization File** does not define if a drone should use a particular implementation, every group is expected to import the drones they bought at the fair in the Network Initializer, and distribute them as explained in the previous section 
+- note that the **Network Initialization File** should never contain two **nodes** with the same `node_id` value
+- Note that the **Network Initialization File** does not define if a drone should use a particular implementation, every group is expected to import the drones they bought at the fair in the Network Initializer, and distribute them as explained in the previous section
 
 # Drone parameters: Packet Drop Rate
 
@@ -76,6 +75,8 @@ A drone is characterized by a parameter that regulates what to do when a packet 
 Packet Drop Rate: The drone drops the received packet with probability equal to the Packet Drop Rate.
 
 The PDR can be up to 100%, and the routing algorithm of every group should find a way to eventually work around this.
+
+The only packet that can be dropped is the fragment
 
 # Messages and fragments
 
@@ -224,41 +225,13 @@ The flood can terminate when:
 
 Clients and servers operate with high level `Message`s which are disassembled into atomically sized packets that are routed through the drone network. The Client-Server Protocol standardizes and regulates the format of these messages and their exchange.
 
-The previously mentioned packets can be: Fragment, Ack, Nack, FloodRequest, FloodResponse.
+The previously mentioned packets can be: `Fragment`, `Ack`, `Nack`, `FloodRequest`, `FloodResponse`.
 
 As described in the main document, `Message`s must be serialized and can be possibly fragmented, and the `Fragment`s can be possibly dropped by drones.
 
-### Message
-
-`Message` is subject to fragmentation: see the dedicated section.
-
-`Fragment` (and `Fragment` only) can be dropped by drones.
-
-```rust
-#[derive(Debug)]
-pub enum ServerType {
-	ChatServer,
-	TextServer,
-	MediaServer,
-}
-
-#[derive(Debug)]
-pub struct Message {
-	message_data: MessageData,
-	routing_header: SourceRoutingHeader
-}
-
-#[derive(Debug)]
-// Part to be fragmented
-pub struct MessageData {
-	session_id: u64,
-	content: MessageContent
-}
-```
-
 ### Ack
 
-If a drone receives a Message and can forward it to the next hop, it also sends an Ack to the client.
+This Ack is sent by a client/server after receiving a Packet.
 
 ```rust
 pub struct Ack {
@@ -267,13 +240,12 @@ pub struct Ack {
 ```
 
 ### Nack
-If an error occurs, then a Nack is sent. A Nack can be of type:
-1. **ErrorInRouting**: If a drone receives a Message and the next hop specified in the Source Routing Header is not a neighbor of the drone, then it sends Error to the client.
-2. **Dropped**: If a drone receives a Message that must be dropped due to the Packet Drop Rate, then it sends Dropped to the client.
+If an error occurs, then a `Nack` is sent.
+The NackTypes are described in the Drone Protocol section.
 
-Source Routing Header contains the path to the client, which can be obtained by reversing the list of hops contained in the Source Routing Header of the problematic Message.
+When a `Nack` is sent back the Source Routing Header contains the path to the src_id, which can be obtained by reversing the list of hops contained in the Source Routing Header of the problematic Packet.
 
-This message cannot be dropped by drones due to Packet Drop Rate.
+This Packet cannot be dropped by drones due to Packet Drop Rate.
 
 ```rust
 pub struct Nack {
@@ -282,17 +254,16 @@ pub struct Nack {
 }
 
 pub enum NackType {
-	ErrorInRouting(NodeId), // contains id of not neighbor
-	DestinationIsDrone,
-	Dropped
+    ErrorInRouting(NodeId), // contains id of not neighbor
+    DestinationIsDrone,
+    Dropped,
+    UnexpectedRecipient(NodeId),
 }
 ```
 
-Source Routing Header contains the path to the client, which can be obtained by reversing the list of hops contained in the Source Routing Header of the problematic Message.
-
 ### Serialization
 
-As described in the main document, Message fragment cannot contain dynamically-sized data structures (that is, **no** `Vec`, **no** `String`, etc.). Therefore, packets will contain large, fixed-size arrays instead.
+As described in the main document, Message fragment cannot contain dynamically-sized data structures (that is, **no** `Vec`, **no** `String`, **no** `HashMap` etc.). Therefore, packets will contain large, fixed-size arrays instead. FloodRequest/FloodResponse/SourceRoutingHeader are allowed to have Vec, but it should be avoided if possible inside Packets.
 
 ### Fragment reassembly
 
@@ -326,11 +297,9 @@ To reassemble fragments into a single packet, a client or server uses the fragme
 
 1. The client or server receives a fragment.
 
-2. It first checks the `session_id` in the header.
+2. It first checks the (`session_id`, `src_id`) tuple in the header.
 
-3. If it has not received a fragment with the same `session_id`, then it creates a vector (`Vec<u8>` with capacity of
-   `total_n_fragments` * 80) where to copy the
-   data of the fragments;
+3. If it has not received a fragment with the same (`session_id`, `src_id`) tuple, then it creates a vector (`Vec<u8>` with capacity of `total_n_fragments` * 80) where to copy the data of the fragments.
 
 4. It would then copy `length` elements of the `data` array at the correct offset in the vector.
 
@@ -424,10 +393,6 @@ Suppose that client A wants to send a message to server D.
 	- Concludes it is the **final destination** and processes the packet.
 
 
-## Simulation
-TODO
-
-
 # Simulation Controller
 
 Like nodes, the **Simulation Controller** (SC) runs on a thread. It must retain a means of communication with all nodes of the network, even when drones go down. 
@@ -435,7 +400,6 @@ The Simulation controller can send and receive different commands to/from the no
 
 ```rust
 /// From controller to drone
-#[derive(Debug, Clone)]
 pub enum DroneCommand {
     AddSender(NodeId, Sender<Packet>),
     SetPacketDropRate(f32),
@@ -443,7 +407,6 @@ pub enum DroneCommand {
 }
 
 /// From drone to controller
-#[derive(Debug, Clone)]
 pub enum NodeEvent {
     PacketSent(Packet),
     PacketDropped(Packet),
@@ -482,42 +445,39 @@ This can be done by using [the select_biased! macro](https://shadow.github.io/do
 
 # **Client-Server Protocol: High-level Messages**
 
+Due to the importance of these messages, drones MUST prioritize handling commands from the simulation controller over messages and fragments.
+
+This can be done by using [the select_biased! macro](https://shadow.github.io/docs/rust/crossbeam/channel/macro.select_biased.html) and putting the simulation controller channel first, as seen in the example.
+
+
+# **Client-Server Protocol: High-level Messages**
+
 These are the kinds of high-level messages that we expect can be exchanged between clients and servers.
 
-Notice that these messages are not subject to the rules of fragmentation, in fact, they can exchange Strings, `Vecs` and other dynamically-sized types
+In the following, we write Protocol messages in this form:
+A -> B : name(params)
+where A and B are network nodes.
+In this case, a message of type `name` is sent from A to B. This message
+contains parameters `params`. Some messages do not provide parameters.
+Notice that these messages are not subject to the rules of fragmentation, in fact, they can exchange Strings, Vecs and other dynamically-sized types
 
-#### Message Types
-```rust
-#[derive(Debug)]
-pub enum MessageContent {
-	// Client -> Server
-	ReqServerType,
-	ReqFilesList,
-	ReqFile(u64),
-	ReqMedia(u64),
+### Webserver Messages
+- C -> S : server_type?
+- S -> C : server_type!(type)
+- C -> S : files_list?
+- S -> C : files_list!(list_of_file_ids)
+- C -> S : file?(file_id)
+- S -> C : file!(file_size, file)
+- C -> S : media?(media_id)
+- S -> C : media!(media)
+- S -> C : error_requested_not_found!
+- S -> C : error_unsupported_request!
+### Chat Messages
+- C -> S : registration_to_chat,
+- C -> S : client_list?
+- S -> C : client_list!(list_of_client_ids)
+- C -> S : message_for?(client_id, message)
+- S -> C : message_from!(client_id, message)
+- S -> C : error_wrong_client_id!
 
-	ReqClientList,
-	ReqRegistrationToChat,
-	ReqMessageSend { to: NodeId, message: Vec<u8> },
-
-	// Server -> Client
-	RespServerType(ServerType),
-	RespFilesList(Vec<u64>),
-	RespFile(Vec<u8>),
-	RespMedia(Vec<u8>),
-	ErrUnsupportedRequestType,
-	ErrRequestedNotFound,
-
-	RespClientList(Vec<NodeId>),
-	RespMessageFrom { from: NodeId, message: Vec<u8> },
-	ErrWrongClientId,
-}
-```
-
-Example of new file request, with id = 8:
-```rust
-fn new_file_request(source_id: NodeId, session_id: u64, routing: SourceRoutingHeader) -> Message {
-	let content = MessageType::ReqFile(8);
-	Message::new(routing, source_id, session_id, content)
-}
-```
+This is just an example. You can implement the communication as you prefer as long as it's in line with the main protocol.
