@@ -438,7 +438,7 @@ The Simulation Controller can send the following commands to drones:
 
 `Crash`: This command makes a drone crash.
 The Simulation Controller, while sending this command to the drone, will send also a 'RemoveSender' command to its neighbours, so that the crushing drone will be able to process the remaining messages without any other incoming.
-At the same time the Crash command will be sent to the drone, which will put it in 'Crashing behavior'. In this state the drone will process the remaining messages as follows, then when all the sender to it's channel will be removed, and the channel will be emptied, trying to listen to it will give back an error, which will mean that the drone can finally crash.
+At the same time the Crash command will be sent to the drone, which will put it in 'Crashing behavior'. In this state the drone will call the 'recv()' function only on its 'Receiver<Packet>' channel, process the remaining messages as follows, then when all the sender to it's channel will be removed, and the channel will be emptied, trying to listen to it will give back an error, which will mean that the drone can finally crash.
 While in this state, the drone will process the remaining messages as follows:
 - FloodRequest can be lost during the process.
 - Ack, Nack and FloodResponse should still be forwarded to the next hop.
