@@ -36,7 +36,7 @@ fn main() {
         1,
         Fragment::from_string(0, 1, "Hello, World!".to_string()),
     );
-    println!("small packet: {:?}", packet);
+    println!("small packet: {}", packet);
     let packet = Packet::new_fragment(
         route.clone(),
         1,
@@ -46,13 +46,13 @@ fn main() {
             "Nell mezzo del cammin di nostra vita, mi ritrovai per una selva oscura".to_string(),
         ),
     );
-    println!("big packet: {:?}", packet);
+    println!("big packet: {}", packet);
 
     println!("----- Flood -----");
     let flood_request = FloodRequest::new(1, 1);
-    println!("flood_request: {:?}", flood_request);
+    println!("flood_request: {}", flood_request);
     let incremented = flood_request.increment(2, NodeType::Client);
-    println!("incremented: {:?}", incremented);
+    println!("incremented: {}", incremented);
     let response = incremented.generate_response();
-    println!("response: {:?}", response);
+    println!("response: {}", response);
 }

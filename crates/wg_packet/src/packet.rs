@@ -64,6 +64,16 @@ impl Packet {
     }
 }
 
+impl Display for Packet {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Packet({}) {{ routing_header: {}, pack_type {} }}",
+            self.session_id, self.routing_header, self.pack_type
+        )
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum PacketType {
     MsgFragment(Fragment),
@@ -71,6 +81,18 @@ pub enum PacketType {
     Nack(Nack),
     FloodRequest(FloodRequest),
     FloodResponse(FloodResponse),
+}
+
+impl Display for PacketType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PacketType::MsgFragment(fragment) => write!(f, "{}", fragment),
+            PacketType::Ack(ack) => write!(f, "{}", ack),
+            PacketType::Nack(nack) => write!(f, "{}", nack),
+            PacketType::FloodRequest(flood_request) => write!(f, "{}", flood_request),
+            PacketType::FloodResponse(flood_response) => write!(f, "{}", flood_response),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -81,9 +103,21 @@ pub enum Nack {
     UnexpectedRecipient(NodeId),
 }
 
+impl Display for Nack {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Ack {
     pub fragment_index: u64,
+}
+
+impl Display for Ack {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Ack({})", self.fragment_index)
+    }
 }
 
 #[derive(Debug, Clone)]

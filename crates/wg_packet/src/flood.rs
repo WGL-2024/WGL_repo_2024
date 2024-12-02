@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use wg_network::NodeId;
 
 #[derive(Debug, Clone)]
@@ -41,8 +42,20 @@ impl FloodRequest {
     }
 }
 
+impl Display for FloodRequest {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct FloodResponse {
     pub flood_id: u64,
     pub path_trace: Vec<(NodeId, NodeType)>,
+}
+
+impl Display for FloodResponse {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
