@@ -67,12 +67,14 @@ pub fn generic_fragment_drop<T: Drone + Send + 'static>() {
     let (_d_command_send, d_command_recv) = unbounded();
 
     let neighbours = HashMap::from([(12, d_send.clone()), (1, c_send.clone())]);
-    let mut drone = T::new( 11,
+    let mut drone = T::new(
+        11,
         unbounded().0,
         d_command_recv,
         d_recv.clone(),
         neighbours,
-        0.0,);
+        0.0,
+    );
 
     // Spawn the drone's run method in a separate thread
     thread::spawn(move || {
@@ -117,21 +119,24 @@ pub fn generic_chain_fragment_drop<T: Drone + Send + 'static>() {
 
     // Drone 11
     let neighbours11 = HashMap::from([(12, d12_send.clone()), (1, c_send.clone())]);
-    let mut drone = T::new( 11,
+    let mut drone = T::new(
+        11,
         unbounded().0,
         d_command_recv.clone(),
         d_recv.clone(),
         neighbours11,
-        0.0,);
+        0.0,
+    );
     // Drone 12
     let neighbours12 = HashMap::from([(11, d_send.clone()), (21, s_send.clone())]);
-    let mut drone2 = T::new( 
+    let mut drone2 = T::new(
         12,
         unbounded().0,
         d_command_recv.clone(),
         d_recv.clone(),
         neighbours12,
-        0.1,);
+        0.1,
+    );
 
     // Spawn the drone's run method in a separate thread
     thread::spawn(move || {
@@ -192,20 +197,24 @@ pub fn generic_chain_fragment_ack<T: Drone + Send + 'static>() {
 
     // Drone 11
     let neighbours11 = HashMap::from([(12, d12_send.clone()), (1, c_send.clone())]);
-    let mut drone = T::new( 11,
+    let mut drone = T::new(
+        11,
         unbounded().0,
         d_command_recv.clone(),
         d_recv.clone(),
         neighbours11,
-        0.0,);
+        0.0,
+    );
     // Drone 12
     let neighbours12 = HashMap::from([(11, d_send.clone()), (21, s_send.clone())]);
-    let mut drone2 = T::new( 12,
+    let mut drone2 = T::new(
+        12,
         unbounded().0,
         d_command_recv.clone(),
         d_recv.clone(),
         neighbours12,
-        0.0,);
+        0.0,
+    );
 
     // Spawn the drone's run method in a separate thread
     thread::spawn(move || {
