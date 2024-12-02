@@ -16,8 +16,8 @@ type NodeId = u64;
 The **Network Initializer**:
 1. reads a local **Network Initialization File** that encodes the network topology and the drone parameters
 2. checks that the initialization file adheres to the formatting and restrictions defined in the section below
-3. checks that the initialization file represents a bidirectional graph
-4. according to the network topology, defined in the initialization file, performs the following actions(in no particular order):
+
+3. according to the network topology, defined in the initialization file, performs the following actions(in no particular order):
   - initializes the drones, distributing the implementations bought from the other groups(`impl`) as evenly as possible, having at most a difference of 1 between the group with the most drones running and the one with the least:
     - for 10 drones and 10 `impl`, 1 distinct `impl` for each drone
     - for 15 drones and 10 `impl`, each `impl` should be used at least once
@@ -66,7 +66,9 @@ connected_drone_ids = ["connected_id1", "connected_id2", "connected_id3", "..."]
 
 ### Additional requirements
 - note that the **Network Initialization File** should never contain two **nodes** with the same `node_id` value
-- Note that the **Network Initialization File** does not define if a drone should use a particular implementation, every group is expected to import the drones they bought at the fair in the Network Initializer, and distribute them as explained in the previous section
+- note that the **Network Initialization File** should represent a **connected** and **bidirectional** graph
+- note that the **Network Initialization File** should represent a network where clients and servers are at the edges of the network, which means that the graph obtained by removing clients and servers is still a **connected** graph
+- note that the **Network Initialization File** does not define if a drone should use a particular implementation, every group is expected to import the drones they bought at the fair in the Network Initializer, and distribute them as explained in the previous section
 
 # Drone parameters: Packet Drop Rate
 
