@@ -424,6 +424,7 @@ pub enum DroneCommand {
 pub enum NodeEvent {
     PacketSent(Packet),
     PacketDropped(Packet),
+    ControllerShortcut(Packet),
 }
 ```
 
@@ -472,7 +473,7 @@ Due to the importance of these messages, drones MUST prioritize handling command
 
 This can be done by using [the select_biased! macro](https://shadow.github.io/docs/rust/crossbeam/channel/macro.select_biased.html) and putting the simulation controller channel first, as seen in the example.
 
-## Shortcut for Ack and Nack
+## Shortcut for Ack, Nack and FloodResponse
 
 Since these messages can't be lost for the network to work, the drone will send them to the Simulator in case of an error, which will send them directly to the destination.
 
