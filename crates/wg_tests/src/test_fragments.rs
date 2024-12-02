@@ -5,7 +5,7 @@ use wg_drone::Drone;
 use wg_network::SourceRoutingHeader;
 use wg_packet::{Ack, Fragment, Nack, NackType, Packet, PacketType};
 
-/* THE FOLLOWING TESTS ARE TO CHECK IF YOUR DRONE IS HANDLING CORRECTLY PACKETS (FRAGMENT) */
+/* THE FOLLOWING TESTS CHECKS IF YOUR DRONE IS HANDLING CORRECTLY PACKETS (FRAGMENT) */
 
 /// Creates a sample packet for testing purposes. For convenience, using 1-10 for clients, 11-20 for drones and 21-30 for servers
 fn create_sample_packet() -> Packet {
@@ -73,7 +73,7 @@ pub fn generic_fragment_drop<T: Drone + Send + 'static>() {
         d_command_recv,
         d_recv.clone(),
         neighbours,
-        0.0,
+        1.0,
     );
 
     // Spawn the drone's run method in a separate thread
@@ -113,7 +113,7 @@ pub fn generic_chain_fragment_drop<T: Drone + Send + 'static>() {
     // Drone 11
     let (d_send, d_recv) = unbounded();
     // Drone 12
-    let (d12_send, _d12_recv) = unbounded();
+    let (d12_send, d12_recv) = unbounded();
     // SC - needed to not make the drone crash
     let (_d_command_send, d_command_recv) = unbounded();
 
@@ -133,9 +133,9 @@ pub fn generic_chain_fragment_drop<T: Drone + Send + 'static>() {
         12,
         unbounded().0,
         d_command_recv.clone(),
-        d_recv.clone(),
+        d12_recv.clone(),
         neighbours12,
-        0.1,
+        1.0,
     );
 
     // Spawn the drone's run method in a separate thread
@@ -191,7 +191,7 @@ pub fn generic_chain_fragment_ack<T: Drone + Send + 'static>() {
     // Drone 11
     let (d_send, d_recv) = unbounded();
     // Drone 12
-    let (d12_send, _d12_recv) = unbounded();
+    let (d12_send, d12_recv) = unbounded();
     // SC - needed to not make the drone crash
     let (_d_command_send, d_command_recv) = unbounded();
 
@@ -211,7 +211,7 @@ pub fn generic_chain_fragment_ack<T: Drone + Send + 'static>() {
         12,
         unbounded().0,
         d_command_recv.clone(),
-        d_recv.clone(),
+        d12_recv.clone(),
         neighbours12,
         0.0,
     );
