@@ -69,6 +69,7 @@ impl MyDrone {
             DroneCommand::AddSender(_node_id, _sender) => todo!(),
             DroneCommand::SetPacketDropRate(_pdr) => todo!(),
             DroneCommand::Crash => unreachable!(),
+            DroneCommand::RemoveSender(_node_id) => todo!(),
         }
     }
 }

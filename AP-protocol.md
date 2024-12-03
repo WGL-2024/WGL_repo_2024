@@ -405,6 +405,7 @@ The Simulation controller can send and receive different commands to/from the dr
 ```rust
 /// From controller to drone
 pub enum DroneCommand {
+    RemoveSender(NodeId),
     AddSender(NodeId, Sender<Packet>),
     SetPacketDropRate(f32),
     Crash,
@@ -414,6 +415,7 @@ pub enum DroneCommand {
 pub enum DroneEvent {
     PacketSent(Packet),
     PacketDropped(Packet),
+    ControllerShortcut(Packet),
 }
 ```
 
@@ -425,13 +427,19 @@ The Simulation Controller can execute the following tasks:
 
 The Simulation Controller can send the following commands to drones:
 
-`AddSender(dst_id, crossbeam::Sender)`: This command adds `dst_id` to the drone neighbors, with `dst_id` crossbeam::
-Sender.
+`Crash`: This command makes a drone crash.
+The Simulation Controller, while sending this command to the drone, will send also a 'RemoveSender' command to its neighbours, so that the crushing drone will be able to process the remaining messages without any other incoming.
+At the same time the Crash command will be sent to the drone, which will put it in 'Crashing behavior'. In this state the drone will call the 'recv()' function only on its 'Receiver<Packet>' channel, process the remaining messages as follows, then when all the sender to it's channel will be removed, and the channel will be emptied, trying to listen to it will give back an error, which will mean that the drone can finally crash.
+While in this state, the drone will process the remaining messages as follows:
+- FloodRequest can be lost during the process.
+- Ack, Nack and FloodResponse should still be forwarded to the next hop.
+- Other types of packets will send an 'ErrorInRouting' Nack back, since the drone has crashed.
+
+`RemoveSender(nghb_id)`: This command close the channel with a neighbour drone.
+
+`AddSender(dst_id, crossbeam::Sender)`: This command adds `dst_id` to the drone neighbors, with `dst_id` crossbeam::Sender.
 
 `SetPacketDropRate(pdr)`: This command alters the pdr of a drone.
-
-`Crash`: This command makes a drone crash. Upon receiving this command, the drone’s thread should return as soon as
-possible.
 
 #### Note:
 Commands issued by the Simulation Controller must preserve the initial network requirements:
@@ -449,6 +457,16 @@ The Simulation Controller can receive the following events from drones:
 `PacketSent(packet)`: This event indicates that node has sent a packet. All the informations about the `src_id`, `dst_id` and `path` are stored in the packet routing header.
 
 `PacketDropped(packet)`: This event indicates that node has dropped a packet. All the informations about the `src_id`, `dst_id` and `path` are stored in the packet routing header.
+
+## Note on commands and events
+
+Due to the importance of these messages, drones MUST prioritize handling commands from the simulation controller over messages and fragments.
+
+This can be done by using [the select_biased! macro](https://shadow.github.io/docs/rust/crossbeam/channel/macro.select_biased.html) and putting the simulation controller channel first, as seen in the example.
+
+## Shortcut for Ack, Nack and FloodResponse
+
+Since these messages can't be lost for the network to work, the drone will send them to the Simulator in case of an error, which will send them directly to the destination.
 
 ### Communication with hosts (clients and servers)
 Since the simulation controller, clients, and servers are managed within the group, the commands between the SC and hosts may differ from those used for drones, as `PacketDropped(packet)`, `Crash`, and `SetPacketDropRate(pdr)` are commands related to drones.  
