@@ -53,7 +53,11 @@ impl FloodRequest {
                 .rev()
                 .collect(),
         );
-        source_routing.append_hop(self.initiator_id);
+        if let Some(destination) = source_routing.destination() {
+            if destination != self.initiator_id {
+                source_routing.append_hop(self.initiator_id);
+            }
+        }
         Packet::new_flood_response(
             source_routing,
             session_id,
