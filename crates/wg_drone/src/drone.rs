@@ -13,7 +13,7 @@ pub trait Drone {
     /// using the simulation control channel to send 'Command(AddChannel(...))'.
     fn new(
         id: NodeId,
-        controller_send: Sender<NodeEvent>,
+        controller_send: Sender<DroneEvent>,
         controller_recv: Receiver<DroneCommand>,
         packet_recv: Receiver<Packet>,
         packet_send: HashMap<NodeId, Sender<Packet>>,
