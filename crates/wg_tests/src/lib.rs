@@ -1,5 +1,5 @@
-#[cfg(feature = "partial_eq")]
+#[cfg(feature = "debug")]
 mod test_fragments;
 
-#[cfg(feature = "partial_eq")]
+#[cfg(feature = "debug")]
 pub use test_fragments::*;

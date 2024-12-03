@@ -9,4 +9,4 @@ wg_packet = { path = "../wg_packet" }
 wg_network = { path = "../wg_network" }
 
 [features]
-partial_eq = []
+debug = []
