@@ -11,7 +11,7 @@ pub enum DroneCommand {
     Crash,
 }
 
-#[cfg(feature = "partial_eq")]
+#[cfg(feature = "debug")]
 impl PartialEq for DroneCommand {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
@@ -32,7 +32,7 @@ impl PartialEq for DroneCommand {
 
 /// From drone to controller
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "partial_eq", derive(PartialEq))]
+#[cfg_attr(feature = "debug", derive(PartialEq))]
 pub enum DroneEvent {
     PacketSent(Packet),
     PacketDropped(Packet),

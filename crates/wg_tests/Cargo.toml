@@ -1,0 +1,13 @@
+[package]
+name = "wg_tests"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+wg_network = { path = "../wg_network" }
+wg_drone = { path = "../wg_drone" }
+wg_packet = { path = "../wg_packet" }
+crossbeam-channel = "0.5.13"
+
+[features]
+debug = ["wg_packet/debug", "wg_network/debug"]
