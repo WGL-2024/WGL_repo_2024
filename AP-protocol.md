@@ -409,7 +409,7 @@ Suppose that client A wants to send a message to server D.
 # Simulation Controller
 
 Like nodes, the **Simulation Controller** (SC) runs on a thread. It must retain a means of communication with all nodes of the network, even when drones go down. 
-The Simulation controller can send and receive different commands to/from the nodes (drones, clients and servers) through reserved channels. The list of available **commands** is as follows:
+The Simulation controller can send and receive different commands to/from the drones through reserved channels. The list of available **commands** is as follows:
 
 ```rust
 /// From controller to drone
@@ -421,7 +421,7 @@ pub enum DroneCommand {
 }
 
 /// From drone to controller
-pub enum NodeEvent {
+pub enum DroneEvent {
     PacketSent(Packet),
     PacketDropped(Packet),
     ControllerShortcut(Packet),
@@ -454,14 +454,14 @@ While in this state, the drone will process the remaining messages as follows:
 Commands issued by the Simulation Controller must preserve the initial network requirements:
 
 - The network graph must remain connected.
-- Each client must remain connected to at least one and at most two nodes.
-- Each server must remain connected to at least two nodes.
+- Each client must remain connected to at least one and at most two drones.
+- Each server must remain connected to at least two drones.
 
 It is the responsibility of the Simulation Controller to validate these conditions before executing any command.
 
 ### Simulation events
 
-The Simulation Controller can receive the following events from nodes:
+The Simulation Controller can receive the following events from drones:
 
 `PacketSent(packet)`: This event indicates that node has sent a packet. All the informations about the `src_id`, `dst_id` and `path` are stored in the packet routing header.
 
@@ -477,8 +477,11 @@ This can be done by using [the select_biased! macro](https://shadow.github.io/do
 
 Since these messages can't be lost for the network to work, the drone will send them to the Simulator in case of an error, which will send them directly to the destination.
 
+### Communication with hosts (clients and servers)
+Since the simulation controller, clients, and servers are managed within the group, the commands between the SC and hosts may differ from those used for drones, as `PacketDropped(packet)`, `Crash`, and `SetPacketDropRate(pdr)` are commands related to drones.  
+However, it is preferable (and strongly recommended) to also add `AddSender(dst_id, crossbeam::Sender)` and `PacketSent(packet)` to the host commands.
 
-# **Client-Server Protocol: High-level Messages**
+## Note on commands and events
 
 Due to the importance of these messages, drones MUST prioritize handling commands from the simulation controller over messages and fragments.
 
