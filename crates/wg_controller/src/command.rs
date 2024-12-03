@@ -36,5 +36,5 @@ impl PartialEq for DroneCommand {
 pub enum DroneEvent {
     PacketSent(Packet),
     PacketDropped(Packet),
-    ControllerShortcut(Packet),
+    ControllerShortcut(Packet), //Used for direct routing of Ack, Nack and FloodResponse
 }

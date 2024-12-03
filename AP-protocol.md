@@ -265,6 +265,12 @@ pub enum NackType {
 }
 ```
 
+Source Routing Header contains the path to the client, which can be obtained by reversing the list of hops contained in the Source Routing Header of the problematic Message.
+
+### Limit Case
+If during the routing back of an Ack, Nack or FloodResponse packet we would encounter an error, we would send that packet directly to destination through the Simulation controller.
+This is necessary because our network doesn't have any other way to know what happens to a packet other than Acks and Nack, so they can't be lost.
+
 ### Serialization
 
 As described in the main document, Message fragment cannot contain dynamically-sized data structures (that is, **no** `Vec`, **no** `String`, **no** `HashMap` etc.). Therefore, packets will contain large, fixed-size arrays instead. FloodRequest/FloodResponse/SourceRoutingHeader are allowed to have Vec, but it should be avoided if possible inside Packets.
@@ -348,6 +354,9 @@ When a drone receives a packet, it **must** perform the following steps:
 
       c. **If the packet is not to be dropped**:
       - Send the packet to `next_hop` using the appropriate channel.
+    
+
+6. If in any of the cases in which we found an error, the Packet was an Ack, Nack or FloodResponse, it'll be sent back to the destination through the Simulation Controller.
 
 
 ### Step-by-Step Example
