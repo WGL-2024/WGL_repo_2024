@@ -93,20 +93,20 @@ impl SourceRoutingHeader {
 
     // CHECKS
     /// Returns true if the route is empty.
-    pub fn is_empty_route(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.hops.is_empty()
     }
     /// Returns true if the current hop is the source node.
     pub fn is_first_hop(&self) -> bool {
-        !self.is_empty_route() && self.hop_index == 0
+        !self.is_empty() && self.hop_index == 0
     }
     /// Returns true if the current hop is the destination node.
     pub fn is_last_hop(&self) -> bool {
-        !self.is_empty_route() && self.hop_index == self.hops.len() - 1
+        !self.is_empty() && self.hop_index == self.hops.len() - 1
     }
     /// Returns true if the hop index is valid.
     pub fn valid_hop_index(&self) -> bool {
-        !self.is_empty_route() && self.hop_index < self.hops.len()
+        !self.is_empty() && self.hop_index < self.hops.len()
     }
 
     // HOPS MANIPULATION
@@ -118,7 +118,7 @@ impl SourceRoutingHeader {
     // WHOLE ROUTE MANIPULATION
     /// Reverses the route.
     pub fn reverse(&mut self) {
-        if self.is_empty_route() {
+        if self.is_empty() {
             return;
         }
         self.hops.reverse();
