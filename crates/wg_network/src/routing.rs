@@ -139,15 +139,9 @@ impl SourceRoutingHeader {
             Bound::Unbounded => 0,
         };
 
-        let end = match range.end_bound() {
-            Bound::Included(&end) => end + 1,
-            Bound::Excluded(&end) => end,
-            Bound::Unbounded => self.hops.len(),
-        };
-
         Some(SourceRoutingHeader {
             hop_index: self.hop_index.max(start) - start,
-            hops: self.hops.get(start..end)?.to_vec(),
+            hops: self.hops.get(range)?.to_vec(),
         })
     }
 
