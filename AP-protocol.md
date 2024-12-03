@@ -1,4 +1,4 @@
-# [Faulty] The communication protocol specifications
+# The communication protocol specifications
 
 This document provides the specifications of the communication protocol used by the drones, the client and the servers of the network. In the following document, drones, clients and servers are collectively referred to as **nodes**. The specifications are often broken or incomplete, you must improve over them.
 
