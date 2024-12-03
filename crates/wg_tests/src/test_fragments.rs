@@ -24,7 +24,6 @@ fn create_sample_packet() -> Packet {
     }
 }
 
-#[cfg(feature = "partial_eq")]
 /// This function is used to test the packet forward functionality of a drone.
 pub fn generic_fragment_forward<T: Drone + Send + 'static>() {
     // drone 2 <Packet>
@@ -58,7 +57,6 @@ pub fn generic_fragment_forward<T: Drone + Send + 'static>() {
     assert_eq!(d2_recv.recv().unwrap(), msg);
 }
 
-#[cfg(feature = "partial_eq")]
 /// Checks if the packet is dropped by one drone. The drone MUST have 100% packet drop rate, otherwise the test will fail sometimes.
 pub fn generic_fragment_drop<T: Drone + Send + 'static>() {
     // Client 1
@@ -106,7 +104,6 @@ pub fn generic_fragment_drop<T: Drone + Send + 'static>() {
     assert_eq!(c_recv.recv().unwrap(), nack_packet);
 }
 
-#[cfg(feature = "partial_eq")]
 /// Checks if the packet is dropped by the second drone. The first drone must have 0% PDR and the second one 100% PDR, otherwise the test will fail sometimes.
 pub fn generic_chain_fragment_drop<T: Drone + Send + 'static>() {
     // Client 1 channels
@@ -185,7 +182,6 @@ pub fn generic_chain_fragment_drop<T: Drone + Send + 'static>() {
     );
 }
 
-#[cfg(feature = "partial_eq")]
 /// Checks if the packet can reach its destination. Both drones must have 0% PDR, otherwise the test will fail sometimes.
 pub fn generic_chain_fragment_ack<T: Drone + Send + 'static>() {
     // Client<1> channels

@@ -10,4 +10,4 @@ wg_packet = { path = "../wg_packet" }
 crossbeam-channel = "0.5.13"
 
 [features]
-partial_eq = []
+partial_eq = ["wg_packet/partial_eq"]

@@ -13,4 +13,4 @@ wg_tests = { path = "../wg_tests" }
 
 [features]
 serialize = ["wg_config/serialize"]
-partial_eq = ["wg_controller/partial_eq","wg_packet/partial_eq","wg_network/partial_eq"]
+partial_eq = ["wg_controller/partial_eq","wg_packet/partial_eq","wg_network/partial_eq", "wg_tests/partial_eq"]
