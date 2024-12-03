@@ -4,7 +4,7 @@ use std::ops::RangeBounds;
 
 pub type NodeId = u8;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 #[cfg_attr(feature = "partial_eq", derive(PartialEq))]
 pub struct SourceRoutingHeader {
     pub hop_index: usize, // must be set to 1 initially by the sender
@@ -47,6 +47,9 @@ impl SourceRoutingHeader {
     /// **The hop index is set to 1.**
     pub fn with_first_hop(hops: Vec<NodeId>) -> Self {
         Self { hop_index: 1, hops }
+    }
+    pub fn empty_route() -> Self {
+        SourceRoutingHeader::default()
     }
 
     // HOP INDEX MANIPULATION
@@ -130,63 +133,26 @@ impl SourceRoutingHeader {
     /// Extracts a sub-route from the route.
     /// If the range is decreasing, it also reverses the sub-route.
     pub fn sub_route(&self, range: impl RangeBounds<usize>) -> Option<SourceRoutingHeader> {
-        let raw_start = match range.start_bound() {
+        let start = match range.start_bound() {
             Bound::Included(&start) => start,
-            Bound::Excluded(&start) => start,
+            Bound::Excluded(&start) => start + 1,
             Bound::Unbounded => 0,
         };
-        let raw_end = match range.end_bound() {
-            Bound::Included(&end) => end,
+
+        let end = match range.end_bound() {
+            Bound::Included(&end) => end + 1,
             Bound::Excluded(&end) => end,
             Bound::Unbounded => self.hops.len(),
         };
 
-        if raw_start > raw_end {
-            let start = match range.end_bound() {
-                Bound::Included(&end) => end,
-                Bound::Excluded(&end) => end + 1,
-                Bound::Unbounded => self.hops.len(),
-            };
+        Some(SourceRoutingHeader {
+            hop_index: self.hop_index.max(start) - start,
+            hops: self.hops.get(start..end)?.to_vec(),
+        })
+    }
 
-            let end = match range.start_bound() {
-                Bound::Included(&start) => start + 1,
-                Bound::Excluded(&start) => start,
-                Bound::Unbounded => 0,
-            };
-
-            if end > self.hops.len() {
-                return None;
-            }
-
-            let mut res = SourceRoutingHeader {
-                hop_index: self.hop_index.max(start) - start,
-                hops: self.hops[start..end].to_vec(),
-            };
-
-            res.reverse();
-
-            Some(res)
-        } else {
-            let start = match range.start_bound() {
-                Bound::Included(&start) => start,
-                Bound::Excluded(&start) => start + 1,
-                Bound::Unbounded => 0,
-            };
-
-            let end = match range.end_bound() {
-                Bound::Included(&end) => end + 1,
-                Bound::Excluded(&end) => end,
-                Bound::Unbounded => self.hops.len(),
-            };
-
-            if end > self.hops.len() {
-                return None;
-            }
-
-            Some(SourceRoutingHeader {
-                hop_index: self.hop_index.max(start) - start,
-                hops: self.hops[start..end].to_vec(),
-            })
-        }
+    // OTHERS
+    pub fn len(&self) -> usize {
+        self.hops.len()
     }
 }
