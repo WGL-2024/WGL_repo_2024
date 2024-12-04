@@ -6,7 +6,7 @@ pub const FRAGMENT_DSIZE: usize = 128;
 
 // Is atomic unit to be sent
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "partial_eq", derive(PartialEq))]
+#[cfg_attr(feature = "debug", derive(PartialEq))]
 pub struct Packet {
     pub routing_header: SourceRoutingHeader,
     pub session_id: u64,
@@ -84,7 +84,7 @@ impl Display for Packet {
 }
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "partial_eq", derive(PartialEq))]
+#[cfg_attr(feature = "debug", derive(PartialEq))]
 pub enum PacketType {
     MsgFragment(Fragment),
     Ack(Ack),
@@ -106,7 +106,7 @@ impl Display for PacketType {
 }
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "partial_eq", derive(PartialEq))]
+#[cfg_attr(feature = "debug", derive(PartialEq))]
 pub struct Nack {
     pub fragment_index: u64, // If the packet is not a fragment, it's considered as a whole, so fragment_index will be 0.
     pub nack_type: NackType,
@@ -127,7 +127,7 @@ impl Display for Nack {
 }
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "partial_eq", derive(PartialEq))]
+#[cfg_attr(feature = "debug", derive(PartialEq))]
 pub struct Ack {
     pub fragment_index: u64,
 }
@@ -139,7 +139,7 @@ impl Display for Ack {
 }
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "partial_eq", derive(PartialEq))]
+#[cfg_attr(feature = "debug", derive(PartialEq))]
 pub struct Fragment {
     pub fragment_index: u64,
     pub total_n_fragments: u64,

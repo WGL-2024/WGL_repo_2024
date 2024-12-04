@@ -6,4 +6,4 @@ edition = "2021"
 [dependencies]
 
 [features]
-partial_eq = []
+debug = []

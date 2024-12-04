@@ -9,7 +9,13 @@ wg_controller = { path = "../wg_controller" }
 wg_drone = { path = "../wg_drone" }
 wg_network = { path = "../wg_network" }
 wg_packet = { path = "../wg_packet" }
+wg_tests = { path = "../wg_tests" }
 
 [features]
 serialize = ["wg_config/serialize"]
-partial_eq = ["wg_controller/partial_eq","wg_packet/partial_eq","wg_network/partial_eq"]
+debug = [
+    "wg_controller/debug",
+    "wg_packet/debug",
+    "wg_network/debug",
+    "wg_tests/debug",
+]
