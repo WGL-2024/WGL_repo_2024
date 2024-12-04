@@ -34,7 +34,9 @@ impl PartialEq for DroneCommand {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "debug", derive(PartialEq))]
 pub enum DroneEvent {
-    PacketSent(Packet),
-    PacketDropped(Packet),
-    ControllerShortcut(Packet), //Used for direct routing of Ack, Nack and FloodResponse
+    PacketSent(Packet), // drone sent a packet
+    PacketReceived(Packet), // drone received a packet
+    PacketDropped(Packet), // drone dropped this packet
+    DroneCrash, // the drone has managed any packets remaining in its queues and is about to get dropped
+    ControllerShortcut(Packet), // Used for direct routing of Ack, Nack and FloodResponse
 }
