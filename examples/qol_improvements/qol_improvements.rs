@@ -29,6 +29,10 @@ fn main() {
             .map(|r| r.to_string())
             .unwrap_or("None".to_string())
     );
+    println!(
+        "[ 0 -> 1 -> 2 -> 3 -> 1 -> (4) ].without_loops(): {}",
+        SourceRoutingHeader::new(vec![0, 1, 2, 3, 1, 4], 0).without_loops()
+    );
 
     println!("----- Fragment -----");
     let packet = Packet::new_fragment(

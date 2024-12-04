@@ -38,18 +38,21 @@ impl Display for SourceRoutingHeader {
 
 impl SourceRoutingHeader {
     // INITIALIZATION
+    pub fn new(hops: Vec<NodeId>, hop_index: usize) -> Self {
+        Self { hops, hop_index }
+    }
     /// Initializes the route with the given hops.
     /// **The hop index is set to 0.**
     pub fn initialize(hops: Vec<NodeId>) -> Self {
-        Self { hop_index: 0, hops }
+        Self::new(hops, 0)
     }
     /// Initializes the route with the given hops.
     /// **The hop index is set to 1.**
     pub fn with_first_hop(hops: Vec<NodeId>) -> Self {
-        Self { hop_index: 1, hops }
+        Self::new(hops, 1)
     }
     pub fn empty_route() -> Self {
-        SourceRoutingHeader::default()
+        Self::new(Vec::new(), 0)
     }
 
     // HOP INDEX MANIPULATION
@@ -139,10 +142,36 @@ impl SourceRoutingHeader {
             Bound::Unbounded => 0,
         };
 
+        let end = match range.end_bound() {
+            Bound::Included(&end) => end + 1,
+            Bound::Excluded(&end) => end,
+            Bound::Unbounded => self.hops.len(),
+        };
+
         Some(SourceRoutingHeader {
             hop_index: self.hop_index.max(start) - start,
-            hops: self.hops.get(range)?.to_vec(),
+            hops: self.hops.get(start..end)?.to_vec(),
         })
+    }
+    /// Creates a new route without loops.
+    pub fn without_loops(&self) -> SourceRoutingHeader {
+        if self.is_empty() {
+            return SourceRoutingHeader::empty_route();
+        }
+
+        let mut simplified = SourceRoutingHeader::empty_route();
+        for (i, hop) in self.hops.iter().enumerate() {
+            if let Some(loop_start) = simplified.hops.iter().enumerate().find(|(i, &previous_hop)| previous_hop == *hop).map(|(i, _)| i) {
+                for _ in loop_start..i {
+                    simplified.hops.pop();
+                }
+            }
+            simplified.append_hop(*hop);
+        }
+
+        simplified.hop_index = simplified.hops.iter().enumerate().find(|(i, &hop)| hop == self.current_hop().unwrap()).map(|(i, _)| i).unwrap_or(0);
+
+        simplified
     }
 
     // OTHERS
