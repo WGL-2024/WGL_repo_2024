@@ -161,7 +161,13 @@ impl SourceRoutingHeader {
 
         let mut simplified = SourceRoutingHeader::empty_route();
         for (i, hop) in self.hops.iter().enumerate() {
-            if let Some(loop_start) = simplified.hops.iter().enumerate().find(|(_, &previous_hop)| previous_hop == *hop).map(|(i, _)| i) {
+            if let Some(loop_start) = simplified
+                .hops
+                .iter()
+                .enumerate()
+                .find(|(_, &previous_hop)| previous_hop == *hop)
+                .map(|(i, _)| i)
+            {
                 for _ in loop_start..i {
                     simplified.hops.pop();
                 }
@@ -169,7 +175,13 @@ impl SourceRoutingHeader {
             simplified.append_hop(*hop);
         }
 
-        simplified.hop_index = simplified.hops.iter().enumerate().find(|(_, &hop)| hop == self.current_hop().unwrap()).map(|(i, _)| i).unwrap_or(0);
+        simplified.hop_index = simplified
+            .hops
+            .iter()
+            .enumerate()
+            .find(|(_, &hop)| hop == self.current_hop().unwrap())
+            .map(|(i, _)| i)
+            .unwrap_or(0);
 
         simplified
     }
