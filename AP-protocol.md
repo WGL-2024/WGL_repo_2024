@@ -1,6 +1,6 @@
 # The communication protocol specifications
 
-This document provides the specifications of the communication protocol used by the drones, the client and the servers of the network. In the following document, drones, clients and servers are collectively referred to as **nodes**. The specifications are often broken or incomplete, you must improve over them.
+This document provides the specifications of the communication protocol used by the drones, the client and the servers of the network. In the following document, drones, clients and servers are collectively referred to as **nodes**.
 
 This document also establishes some technical requirements of the project.
 
@@ -8,7 +8,7 @@ This document also establishes some technical requirements of the project.
 Can be useful for understanding and for not having to change the underlining type everywhere.
 
 ```rust
-type NodeId = u64;
+type NodeId = u8;
 ```
 
 # Network Initializer
@@ -80,13 +80,13 @@ Packet Drop Rate: The drone drops the received packet with probability equal to 
 
 The PDR can be up to 100%, and the routing algorithm of every group should find a way to eventually work around this.
 
-The only packet that can be dropped is the fragment
+The only packet that can be dropped is the msg_fragment
 
 # Messages and fragments
 
 Recall that there are: Content servers (that is, Text and Media servers) and Communication servers. These servers are used by clients to implement applications.
 
-These servers exchange, respectively, Text server messages, Media server messages and Communication server messages. These are high-level messages. Recall that you must standardize and regulate their low-level counterparts (that is, fragments).
+These servers exchange, respectively, Text server messages, Media server messages and Communication server messages. These are high-level messages. Their low-level counterparts, that is fragment, are standardized inside the protocol.
 
 # Source Routing Protocol
 
@@ -131,16 +131,19 @@ Suppose that client A wants to send a message to server D.
 1. **Node B**:
 	- Receives the packet.
 	- Determines that the next hop is **E**.
+ 	- Increments the **`hop_index`** by 1.
 	- Sends the packet to **E**.
 
 2. **Node E**:
 	- Receives the packet.
 	- Determines that the next hop is **F**.
+ 	- Increments the **`hop_index`** by 1.
 	- Sends the packet to **F**.
 
 3. **Node F**:
 	- Receives the packet.
 	- Determines that the next hop is **D**.
+ 	- Increments the **`hop_index`** by 1.
 	- Sends the packet to **D**.
 
 4. **Node D**:
@@ -164,7 +167,7 @@ struct SourceRoutingHeader {
 
 When the network is first initialized, nodes only know who their own neighbors are.
 
-Clients and servers need to obtain an understanding of the network topology ("what nodes are there in the network and what are their types?") so that they can compute a route that packets take through the network (refer to the Source routing section for details).
+Clients and servers need to obtain an understanding of the network topology ("what nodes are there in the network and what are their types") so that they can compute a route that packets take through the network (refer to the Source routing section for details).
 
 To do so, they must use the **Network Discovery Protocol**. The Network Discovery Protocol is initiated by clients and servers and works through query flooding.
 
@@ -196,7 +199,7 @@ When a neighbor node receives the flood request, it processes it based on the fo
 	- The drone adds itself to the `path_trace`.
 	- **If it has neighbors** (excluding the one from which it received the `FloodRequest`):
 		- The drone forwards the packet to its neighbors (except the one from which it received the `FloodRequest`).
-	- **If it has no neighbors**, then:
+	- **If it has no neighbors** (excluding the one from which it received the `FloodRequest`), then:
 		- The drone creates a `FloodResponse` and sends it to the node from which it received the `FloodRequest`.
 
 ```rust
@@ -209,7 +212,7 @@ struct FloodResponse {
 #### Notes:
 - For the discovery protocol, `Packet`s of type `FloodRequest` and `FloodResponse` will be sent.
 - The `routing_header` of `Packet`s of type `FloodRequest` will be ignored (as the Packet is sent to all neighbors except the one from which it was received).
-- The `routing_header` of `Packet`s of type `FloodResponse`, on the other hand, determines the packet's path.
+- The `routing_header` of `Packet`s of type `FloodResponse`, on the other hand, determines the packet's path, and is creared from the `path_trace` of the `FloodRequest` from which is generated.
 
 ### **Recording Topology Information**
 
@@ -235,7 +238,7 @@ As described in the main document, `Message`s must be serialized and can be poss
 
 ### Ack
 
-This Ack is sent by a client/server after receiving a Packet.
+This Ack is sent by a **client/server** after receiving a Packet.
 
 ```rust
 pub struct Ack {
@@ -273,7 +276,7 @@ This is necessary because our network doesn't have any other way to know what ha
 
 ### Serialization
 
-As described in the main document, Message fragment cannot contain dynamically-sized data structures (that is, **no** `Vec`, **no** `String`, **no** `HashMap` etc.). Therefore, packets will contain large, fixed-size arrays instead. FloodRequest/FloodResponse/SourceRoutingHeader are allowed to have Vec, but it should be avoided if possible inside Packets.
+As described in the main document, Message fragment cannot contain dynamically-sized data structures (that is, **no** `Vec`, **no** `String`, **no** `HashMap` etc.). Therefore, packets will contain large, fixed-size arrays instead.
 
 ### Fragment reassembly
 
@@ -309,17 +312,15 @@ To reassemble fragments into a single packet, a client or server uses the fragme
 
 2. It first checks the (`session_id`, `src_id`) tuple in the header.
 
-3. If it has not received a fragment with the same (`session_id`, `src_id`) tuple, then it creates a vector (`Vec<u8>` with capacity of `total_n_fragments` * 80) where to copy the data of the fragments.
+3. If it has not received a fragment with the same (`session_id`, `src_id`) tuple, then it creates a vector (`Vec<u8>` with capacity of `total_n_fragments` * 128) where to copy the data of the fragments.
 
 4. It would then copy `length` elements of the `data` array at the correct offset in the vector.
 
-> Note: if there are more than one fragment, `length` must be 80 for all fragments except for the last.
+> Note: if there are more than one fragment, `length` must be 128 for all fragments except for the last. The `length` of the last one is specified by the `length` component inside the fragment,
 
 If the client or server has already received a fragment with the same `session_id`, then it just needs to copy the data of the fragment in the vector.
 
-Once that the client or server has received all fragments (that is, `fragment_index` 0 to `total_n_fragments` - 1), then it has reassembled the whole fragment.
-
-Therefore, the packet is now a message that can be delivered.
+Once that the client or server has received all fragments (that is, `fragment_index` 0 to `total_n_fragments` - 1), then it has reassembled the whole message and sends back an Ack.
 
 # Drone Protocol
 
@@ -408,8 +409,9 @@ Suppose that client A wants to send a message to server D.
 
 # Simulation Controller
 
-Like nodes, the **Simulation Controller** (SC) runs on a thread. It must retain a means of communication with all nodes of the network, even when drones go down. 
-The Simulation controller can send and receive different commands to/from the drones through reserved channels. The list of available **commands** is as follows:
+Like nodes, the **Simulation Controller** (SC) runs on a thread. It must retain a means of communication with all nodes of the network.
+The Simulation controller can send and receive different commands/events to/from the drones through reserved channels.
+The list of available **commands** is as follows:
 
 ```rust
 /// From controller to drone
@@ -437,9 +439,9 @@ The Simulation Controller can execute the following tasks:
 The Simulation Controller can send the following commands to drones:
 
 `Crash`: This command makes a drone crash.
-The Simulation Controller, while sending this command to the drone, will send also a 'RemoveSender' command to its neighbours, so that the crushing drone will be able to process the remaining messages without any other incoming.
-At the same time the Crash command will be sent to the drone, which will put it in 'Crashing behavior'. In this state the drone will call the 'recv()' function only on its 'Receiver<Packet>' channel, process the remaining messages as follows, then when all the sender to it's channel will be removed, and the channel will be emptied, trying to listen to it will give back an error, which will mean that the drone can finally crash.
-While in this state, the drone will process the remaining messages as follows:
+1. The Simulation Controller, while sending this command to the drone, will send also a 'RemoveSender' command to its neighbours, so that the crushing drone will be able to process the remaining messages without any other incoming.
+2. At the same time the Crash command will be sent to the drone, which will put it in 'Crashing behavior'. In this state the drone will call the 'recv()' function only on its 'Receiver<Packet>' channel, process the remaining messages as follows, then when all the sender to it's channel will be removed, and the channel will be emptied, trying to listen to it will give back an error, which will mean that the drone can finally crash.
+3. While in this state, the drone will process the remaining messages as follows:
 - FloodRequest can be lost during the process.
 - Ack, Nack and FloodResponse should still be forwarded to the next hop.
 - Other types of packets will send an 'ErrorInRouting' Nack back, since the drone has crashed.
@@ -467,19 +469,13 @@ The Simulation Controller can receive the following events from drones:
 
 `PacketDropped(packet)`: This event indicates that node has dropped a packet. All the informations about the `src_id`, `dst_id` and `path` are stored in the packet routing header.
 
-## Note on commands and events
-
-Due to the importance of these messages, drones MUST prioritize handling commands from the simulation controller over messages and fragments.
-
-This can be done by using [the select_biased! macro](https://shadow.github.io/docs/rust/crossbeam/channel/macro.select_biased.html) and putting the simulation controller channel first, as seen in the example.
-
 ## Shortcut for Ack, Nack and FloodResponse
 
-Since these messages can't be lost for the network to work, the drone will send them to the Simulator in case of an error, which will send them directly to the destination.
+Since these messages cannot be lost for the network to work, the drone will send them to the Simulator in case of an error, which will send them directly to the destination.
 
 ### Communication with hosts (clients and servers)
-Since the simulation controller, clients, and servers are managed within the group, the commands between the SC and hosts may differ from those used for drones, as `PacketDropped(packet)`, `Crash`, and `SetPacketDropRate(pdr)` are commands related to drones.  
-However, it is preferable (and strongly recommended) to also add `AddSender(dst_id, crossbeam::Sender)` and `PacketSent(packet)` to the host commands.
+Since the simulation controller, clients, and servers are managed within the group, the commands between the SC and hosts may differ from those used for drones, as `PacketDropped(packet)`, `Crash`, and `SetPacketDropRate(pdr)` are commands related only to them.  
+However, it is preferable (and strongly recommended) to also add `AddSender(dst_id, crossbeam::Sender)` and `PacketSent(packet)` to the host commands/events.
 
 ## Note on commands and events
 
