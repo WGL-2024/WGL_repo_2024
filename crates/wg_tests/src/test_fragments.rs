@@ -107,10 +107,7 @@ pub fn generic_fragment_drop<T: Drone + Send + 'static>() {
     // Client listens for packet from the drone (Dropped Nack)
     assert_eq!(c_recv.recv().unwrap(), nack_packet);
     // SC listen for event from the drone
-    assert_eq!(
-        d_event_recv.recv().unwrap(),
-        DroneEvent::PacketDropped(msg)
-    );
+    assert_eq!(d_event_recv.recv().unwrap(), DroneEvent::PacketDropped(msg));
 }
 
 /// Checks if the packet is dropped by the second drone. The first drone has 0% PDR and the second one 100% PDR, otherwise the test will fail sometimes.
