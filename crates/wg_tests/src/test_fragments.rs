@@ -109,7 +109,7 @@ pub fn generic_fragment_drop<T: Drone + Send + 'static>() {
     // SC listen for event from the drone
     assert_eq!(
         d_event_recv.recv().unwrap(),
-        DroneEvent::PacketDropped(nack_packet)
+        DroneEvent::PacketDropped(msg)
     );
 }
 
