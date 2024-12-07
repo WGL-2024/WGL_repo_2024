@@ -26,6 +26,7 @@ fn create_sample_packet() -> Packet {
 }
 
 /// This function is used to test the packet forward functionality of a drone.
+/// The assert consists in checking if the "client" and "SC" receive the correct packet.
 pub fn generic_fragment_forward<T: Drone + Send + 'static>() {
     // Drone 11
     let (d_send, d_recv) = unbounded();
@@ -33,10 +34,11 @@ pub fn generic_fragment_forward<T: Drone + Send + 'static>() {
     let (d2_send, d2_recv) = unbounded::<Packet>();
     // SC commands
     let (_d_command_send, d_command_recv) = unbounded();
+    let (d_event_send, d_event_recv) = unbounded();
 
     let mut drone = T::new(
         11,
-        unbounded().0,
+        d_event_send,
         d_command_recv,
         d_recv.clone(),
         HashMap::from([(12, d2_send.clone())]),
@@ -55,6 +57,8 @@ pub fn generic_fragment_forward<T: Drone + Send + 'static>() {
 
     // d2 receives packet from d1
     assert_eq!(d2_recv.recv().unwrap(), msg);
+    // SC listen for event from the drone
+    assert_eq!(d_event_recv.recv().unwrap(), DroneEvent::PacketSent(msg));
 }
 
 /// Checks if the packet is dropped by one drone. The assert consists in checking if the "client" and "SC" receive the correct packet.
@@ -157,7 +161,7 @@ pub fn generic_chain_fragment_drop<T: Drone + Send + 'static>() {
     // "Client" sends packet to the drone
     d_send.send(msg.clone()).unwrap();
 
-    // Client receive an NACK originated from 'd2'
+    // Client receives an NACK originated from 'd2'
     assert_eq!(
         c_recv.recv().unwrap(),
         Packet {
