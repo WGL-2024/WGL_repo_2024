@@ -1,12 +1,15 @@
 use crossbeam_channel::unbounded;
 use std::collections::HashMap;
 use std::thread;
+use std::time::Duration;
 use wg_controller::DroneEvent;
 use wg_drone::Drone;
 use wg_network::SourceRoutingHeader;
 use wg_packet::{Fragment, Nack, NackType, Packet, PacketType};
 
-/* THE FOLLOWING TESTS ARE TO CHECK IF YOUR DRONE IS HANDLING CORRECTLY PACKETS (FRAGMENT) */
+/* THE FOLLOWING TESTS CHECK IF YOUR DRONE IS HANDLING CORRECTLY PACKETS (FRAGMENT) */
+
+const TIMEOUT: Duration = Duration::from_millis(400);
 
 /// Creates a sample packet for testing purposes. For convenience, using 1-10 for clients, 11-20 for drones and 21-30 for servers
 fn create_sample_packet() -> Packet {
@@ -56,9 +59,9 @@ pub fn generic_fragment_forward<T: Drone + Send + 'static>() {
     msg.routing_header.hop_index = 2;
 
     // d2 receives packet from d1
-    assert_eq!(d2_recv.recv().unwrap(), msg);
+    assert_eq!(d2_recv.recv_timeout(TIMEOUT).unwrap(), msg);
     // SC listen for event from the drone
-    assert_eq!(d_event_recv.recv().unwrap(), DroneEvent::PacketSent(msg));
+    assert_eq!(d_event_recv.recv_timeout(TIMEOUT).unwrap(), DroneEvent::PacketSent(msg));
 }
 
 /// Checks if the packet is dropped by one drone. The assert consists in checking if the "client" and "SC" receive the correct packet.
@@ -105,9 +108,9 @@ pub fn generic_fragment_drop<T: Drone + Send + 'static>() {
     );
 
     // Client listens for packet from the drone (Dropped Nack)
-    assert_eq!(c_recv.recv().unwrap(), nack_packet);
+    assert_eq!(c_recv.recv_timeout(TIMEOUT).unwrap(), nack_packet);
     // SC listen for event from the drone
-    assert_eq!(d_event_recv.recv().unwrap(), DroneEvent::PacketDropped(msg));
+    assert_eq!(d_event_recv.recv_timeout(TIMEOUT).unwrap(), DroneEvent::PacketDropped(msg));
 }
 
 /// Checks if the packet is dropped by the second drone. The first drone has 0% PDR and the second one 100% PDR, otherwise the test will fail sometimes.
@@ -160,7 +163,7 @@ pub fn generic_chain_fragment_drop<T: Drone + Send + 'static>() {
 
     // Client receives an NACK originated from 'd2'
     assert_eq!(
-        c_recv.recv().unwrap(),
+        c_recv.recv_timeout(TIMEOUT).unwrap(),
         Packet {
             pack_type: PacketType::Nack(Nack {
                 fragment_index: 1,
@@ -225,7 +228,7 @@ pub fn generic_chain_fragment_ack<T: Drone + Send + 'static>() {
 
     msg.routing_header.hop_index = 3;
     // Server receives the fragment
-    assert_eq!(s_recv.recv().unwrap(), msg);
+    assert_eq!(s_recv.recv_timeout(TIMEOUT).unwrap(), msg);
 
     // Server sends an ACK
     d12_send
@@ -241,7 +244,7 @@ pub fn generic_chain_fragment_ack<T: Drone + Send + 'static>() {
 
     // Client receives an ACK originated from 's'
     assert_eq!(
-        c_recv.recv().unwrap(),
+        c_recv.recv_timeout(TIMEOUT).unwrap(),
         Packet::new_ack(
             SourceRoutingHeader {
                 hop_index: 3,
