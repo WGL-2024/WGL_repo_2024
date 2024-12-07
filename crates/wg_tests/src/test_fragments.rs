@@ -191,11 +191,12 @@ pub fn generic_chain_fragment_ack<T: Drone + Send + 'static>() {
     let (d12_send, d12_recv) = unbounded();
     // SC - needed to not make the drone crash
     let (_d_command_send, d_command_recv) = unbounded();
+    let (d_event_send, _d_event_recv) = unbounded();
 
     // Drone 11
     let mut drone = T::new(
         11,
-        unbounded().0,
+        d_event_send.clone(),
         d_command_recv.clone(),
         d_recv,
         HashMap::from([(12, d12_send.clone()), (1, c_send.clone())]),
@@ -204,7 +205,7 @@ pub fn generic_chain_fragment_ack<T: Drone + Send + 'static>() {
     // Drone 12
     let mut drone2 = T::new(
         12,
-        unbounded().0,
+        d_event_send.clone(),
         d_command_recv.clone(),
         d12_recv,
         HashMap::from([(11, d_send.clone()), (21, s_send.clone())]),
