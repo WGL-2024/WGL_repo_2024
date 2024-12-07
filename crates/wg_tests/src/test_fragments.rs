@@ -57,7 +57,7 @@ pub fn generic_fragment_forward<T: Drone + Send + 'static>() {
     assert_eq!(d2_recv.recv().unwrap(), msg);
 }
 
-/// Checks if the packet is dropped by one drone. The assert consists in checking if the "client" and "SC" receives the correct packet.
+/// Checks if the packet is dropped by one drone. The assert consists in checking if the "client" and "SC" receive the correct packet.
 pub fn generic_fragment_drop<T: Drone + Send + 'static>() {
     // Client 1
     let (c_send, c_recv) = unbounded();
