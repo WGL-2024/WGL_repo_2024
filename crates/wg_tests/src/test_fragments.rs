@@ -61,7 +61,10 @@ pub fn generic_fragment_forward<T: Drone + Send + 'static>() {
     // d2 receives packet from d1
     assert_eq!(d2_recv.recv_timeout(TIMEOUT).unwrap(), msg);
     // SC listen for event from the drone
-    assert_eq!(d_event_recv.recv_timeout(TIMEOUT).unwrap(), DroneEvent::PacketSent(msg));
+    assert_eq!(
+        d_event_recv.recv_timeout(TIMEOUT).unwrap(),
+        DroneEvent::PacketSent(msg)
+    );
 }
 
 /// Checks if the packet is dropped by one drone. The assert consists in checking if the "client" and "SC" receive the correct packet.
@@ -110,7 +113,10 @@ pub fn generic_fragment_drop<T: Drone + Send + 'static>() {
     // Client listens for packet from the drone (Dropped Nack)
     assert_eq!(c_recv.recv_timeout(TIMEOUT).unwrap(), nack_packet);
     // SC listen for event from the drone
-    assert_eq!(d_event_recv.recv_timeout(TIMEOUT).unwrap(), DroneEvent::PacketDropped(msg));
+    assert_eq!(
+        d_event_recv.recv_timeout(TIMEOUT).unwrap(),
+        DroneEvent::PacketDropped(msg)
+    );
 }
 
 /// Checks if the packet is dropped by the second drone. The first drone has 0% PDR and the second one 100% PDR, otherwise the test will fail sometimes.
