@@ -2,7 +2,7 @@ use crate::Packet;
 use std::fmt::Display;
 use wg_network::{NodeId, SourceRoutingHeader};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, Copy, PartialEq, Eq)]
 pub enum NodeType {
     Client,
     Drone,
