@@ -116,7 +116,7 @@ pub struct Nack {
 pub enum NackType {
     ErrorInRouting(NodeId), // contains id of not neighbor
     DestinationIsDrone,
-    Dropped,
+    Dropped(NodeId), // id of the drone that's dropping
     UnexpectedRecipient(NodeId),
 }
 
