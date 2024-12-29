@@ -18,7 +18,9 @@ pub trait Drone : Send {
         packet_recv: Receiver<Packet>,
         packet_send: HashMap<NodeId, Sender<Packet>>,
         pdr: f32,
-    ) -> Self;
+    ) -> Self
+    where
+        Self: Sized;
 
     fn run(&mut self);
 }
