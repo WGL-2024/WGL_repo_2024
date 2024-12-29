@@ -7,7 +7,7 @@ use wg_packet::Packet;
 
 /// This is the drone interface.
 /// Each drone's group must implement it
-pub trait Drone {
+pub trait Drone: Send {
     /// The list packet_send would be crated empty inside new.
     /// Other nodes are added by sending command
     /// using the simulation control channel to send 'Command(AddChannel(...))'.
@@ -18,7 +18,9 @@ pub trait Drone {
         packet_recv: Receiver<Packet>,
         packet_send: HashMap<NodeId, Sender<Packet>>,
         pdr: f32,
-    ) -> Self;
+    ) -> Self
+    where
+        Self: Sized;
 
     fn run(&mut self);
 }
