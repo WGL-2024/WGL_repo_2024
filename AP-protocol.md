@@ -324,6 +324,7 @@ Once that the client or server has received all fragments (that is, `fragment_in
 
 # Drone Protocol
 
+## Normal packet handling (excluding FloodRequest)
 When a drone receives a packet, it **must** perform the following steps:
 
 1. **Step 1**: Check if `hops[hop_index]` matches the drone's own `NodeId`.
@@ -333,32 +334,37 @@ When a drone receives a packet, it **must** perform the following steps:
 2. **Step 2**: Increment `hop_index` by **1**.
 
 3. **Step 3**: Determine if the drone is the final destination:
-	- **If `hop_index` equals the length of `hops`**, the drone is the final destination send a Nack with `DestinationIsDrone` and terminate processing.
-	- **If not**, proceed to Step 4.
+	- **If `hop_index` equals the length of `hops`**, the drone is the final destination proceed to handle a error `DestinationIsDrone` and terminate processing.
 
 4. **Step 4**: Identify the next hop using `hops[hop_index]`, let's call it `next_hop`.
-	- **If `next_hop` is not a neighbor** of the drone, send a Nack with `ErrorInRouting` (including the problematic `NodeId` of `next_hop`) and terminate processing.
-	- **If `next_hop` is a neighbor**, proceed to Step 5.
+	- **If `next_hop` is not a neighbor** of the drone, proceed to handle a error `ErrorInRouting` (including the problematic `NodeId` of `next_hop`) and terminate processing.
 
 5. **Step 5**: Proceed based on the packet type:
 
-   - **Flood Messages**: If the packet is flood-related, follow the rules specified in the **Network Discovery Protocol** section.
-
    - **`MsgFragment`**:
 
-      a. **Check for Packet Drop**:
-      - Determine whether to drop the packet based on the drone's **Packet Drop Rate (PDR)**.
+      a. **Check for dropping based on PDR**: Determine whether to drop the packet based on the drone's Packet Drop Rate (PDR).
 
-      b. **If the packet is to be dropped**:
-      - Send back a Nack with type `Dropped`. The Nack should have a Source Routing Header containing the reversed path from the current drone back to the sender.
-      - Terminate processing.
+      b. **If the packet is to be dropped**: proceed to handle a error `Dropped`. 
 
-      c. **If the packet is not to be dropped**:
-      - Send the packet to `next_hop` using the appropriate channel.
-    
+   - **other packet types**: do nothing
 
-6. If in any of the cases in which we found an error, the Packet was an Ack, Nack or FloodResponse, it'll be sent back to the destination through the Simulation Controller.
+6. **Step 6**: Send the packet to `next_hop` using the appropriate channel.
 
+### In the case the drone that is handling is in crash state
+... see other PR (temp message to be removed).
+
+### In case of error found (nack created)
+1. **If the original packet is of type `MsgPacket`**
+	
+	* The Nack should have a Source Routing Header containing the **reversed path from the current drone (included) back to the sender (included)**.
+
+2. **Else** the packets cannot be dropped so instead of sending that error back, the packet will be sent to the destination through the Simulation Controller.
+	
+	* **In the case of `DestinationIsDrone`** the packet is simply dropped to avoid passing back and forth the packet between Simulation Controller and that drone.
+
+## Handling of FloodRequest
+... see other PRs.
 
 ### Step-by-Step Example
 
