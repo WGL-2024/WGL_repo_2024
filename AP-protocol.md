@@ -211,7 +211,6 @@ struct FloodResponse {
 
 #### Notes:
 - For the discovery protocol, `Packet`s of type `FloodRequest` and `FloodResponse` will be sent.
-- The `routing_header` of `Packet`s of type `FloodRequest` will be ignored (as the Packet is sent to all neighbors except the one from which it was received).
 - The `routing_header` of `Packet`s of type `FloodResponse`, on the other hand, determines the packet's path, and is creared from the `path_trace` of the `FloodRequest` from which is generated.
 
 ### **Recording Topology Information**
@@ -324,6 +323,7 @@ Once that the client or server has received all fragments (that is, `fragment_in
 
 # Drone Protocol
 
+## Normal packet handling (excluding FloodRequest)
 When a drone receives a packet, it **must** perform the following steps:
 
 1. **Step 1**: Check if `hops[hop_index]` matches the drone's own `NodeId`.
@@ -342,7 +342,7 @@ When a drone receives a packet, it **must** perform the following steps:
 
 5. **Step 5**: Proceed based on the packet type:
 
-   - **Flood Messages**: If the packet is flood-related, follow the rules specified in the **Network Discovery Protocol** section.
+   - ... see other PR for fix to this part (this message is temp)
 
    - **`MsgFragment`**:
 
@@ -358,6 +358,13 @@ When a drone receives a packet, it **must** perform the following steps:
     
 
 6. If in any of the cases in which we found an error, the Packet was an Ack, Nack or FloodResponse, it'll be sent back to the destination through the Simulation Controller.
+
+## Handling of FloodRequest
+The `routing_header` of `Packet`s of type `FloodRequest` will be ignored (as the Packet is sent to all neighbors except the one from which it was received).
+
+**NOTE**: `routing_header` of `FloodRequest` should be created as an empty vector (`vec!()`) and left as such at every hops.
+
+So we skip all test of `routing_header`, and proceed to respond with one or more `FloodRequest` or a single `FloodResponse` based on the rule in the chapter of Network Discovery.
 
 
 ### Step-by-Step Example
