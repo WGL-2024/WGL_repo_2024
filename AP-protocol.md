@@ -188,6 +188,13 @@ struct FloodRequest {
 }
 ```
 
+**NOTE**: that the the FloodRequest should be initializated with the path containing the node that has originated the request, as follows:
+
+```rust
+let req = FloodRequest {flood_id: <some_id>, initiator_id: <this_node_id>,
+	path: vec![(<this_node_id>, <this_node_type>)]}
+```
+
 ### **Neighbor Response**
 
 When a neighbor node receives the flood request, it processes it based on the following rules:
@@ -212,7 +219,7 @@ struct FloodResponse {
 #### Notes:
 - For the discovery protocol, `Packet`s of type `FloodRequest` and `FloodResponse` will be sent.
 - The `routing_header` of `Packet`s of type `FloodRequest` will be ignored (as the Packet is sent to all neighbors except the one from which it was received).
-- The `routing_header` of `Packet`s of type `FloodResponse`, on the other hand, determines the packet's path, and is creared from the `path_trace` of the `FloodRequest` from which is generated.
+- The `routing_header` of `Packet`s of type `FloodResponse`, on the other hand, determines the packet's path, and is creared from the `path_trace` by simply reversing the the list of node_id in the `path_trace`.
 
 ### **Recording Topology Information**
 
