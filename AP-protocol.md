@@ -420,6 +420,7 @@ pub enum DroneCommand {
     AddSender(NodeId, Sender<Packet>),
     SetPacketDropRate(f32),
     Crash,
+    KillThread,
 }
 
 /// From drone to controller
@@ -438,13 +439,21 @@ The Simulation Controller can execute the following tasks:
 
 The Simulation Controller can send the following commands to drones:
 
-`Crash`: This command makes a drone crash.
+`KillThread`: this command makes a drone crash without any other reservation. It should be used only to clean up after a test to avoid thread constantly increasing during integration test. 
+	
+- This only works if the crash was not called on the drone.
+
+`Crash`: This command makes a drone crash, but before that it handle packets, so that no packets will be lost.
 1. The Simulation Controller, while sending this command to the drone, will send also a 'RemoveSender' command to its neighbours, so that the crushing drone will be able to process the remaining messages without any other incoming.
+
 2. At the same time the Crash command will be sent to the drone, which will put it in 'Crashing behavior'. In this state the drone will call the 'recv()' function only on its 'Receiver<Packet>' channel, process the remaining messages as follows, then when all the sender to it's channel will be removed, and the channel will be emptied, trying to listen to it will give back an error, which will mean that the drone can finally crash.
+
+	- When in crashing phases the drone will stop listening the Simulation Controller messages, becaming unresponsive to them.
+
 3. While in this state, the drone will process the remaining messages as follows:
-- FloodRequest can be lost during the process.
-- Ack, Nack and FloodResponse should still be forwarded to the next hop.
-- Other types of packets will send an 'ErrorInRouting' Nack back, since the drone has crashed.
+	- FloodRequest can be lost during the process.
+	- Ack, Nack and FloodResponse should still be forwarded to the next hop.
+	- Other types of packets will send an 'ErrorInRouting' Nack back, since the drone has crashed.
 
 `RemoveSender(nghb_id)`: This command close the channel with a neighbour drone.
 
