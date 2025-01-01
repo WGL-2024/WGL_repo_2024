@@ -188,6 +188,8 @@ struct FloodRequest {
 }
 ```
 
+**NOTE**: `flood_id` must be sequential, meaning that each time a new `FloodRequest` is created that must have a `flood_id` greater that the previous `FloodRequest`.
+
 ### **Neighbor Response**
 
 When a neighbor node receives the flood request, it processes it based on the following rules:
