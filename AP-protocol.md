@@ -191,11 +191,11 @@ struct FloodRequest {
 ### **Neighbor Response**
 
 When a neighbor node receives the flood request, it processes it based on the following rules:
-- If the flood ID has already been received:
+- If the pair (flood_id, initiator_id) has already been received:
 	- The drone adds itself to the `path_trace`.
 	- The drone creates a `FloodResponse` and sends it back.
 
-- If the flood ID has not yet been received:
+- If the pair (flood_id, initiator_id) has not yet been received:
 	- The drone adds itself to the `path_trace`.
 	- **If it has neighbors** (excluding the one from which it received the `FloodRequest`):
 		- The drone forwards the packet to its neighbors (except the one from which it received the `FloodRequest`).
