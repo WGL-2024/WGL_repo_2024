@@ -61,7 +61,7 @@ impl FloodRequest {
                 source_routing.append_hop(self.initiator_id);
             }
             _ => {}
-        }        
+        }
         Packet::new_flood_response(
             source_routing,
             session_id,
