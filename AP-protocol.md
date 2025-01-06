@@ -188,14 +188,16 @@ struct FloodRequest {
 }
 ```
 
+**NOTE**: that the the FloodRequest may or may not contain inside the path_trace the initiator_id, based on the network implementation. Your drone need to take care of this possibility.
+
 ### **Neighbor Response**
 
 When a neighbor node receives the flood request, it processes it based on the following rules:
-- If the flood ID has already been received:
+- If the pair (flood_id, initiator_id) has already been received:
 	- The drone adds itself to the `path_trace`.
 	- The drone creates a `FloodResponse` and sends it back.
 
-- If the flood ID has not yet been received:
+- If the pair (flood_id, initiator_id) has not yet been received:
 	- The drone adds itself to the `path_trace`.
 	- **If it has neighbors** (excluding the one from which it received the `FloodRequest`):
 		- The drone forwards the packet to its neighbors (except the one from which it received the `FloodRequest`).
@@ -212,7 +214,8 @@ struct FloodResponse {
 #### Notes:
 - For the discovery protocol, `Packet`s of type `FloodRequest` and `FloodResponse` will be sent.
 - The `routing_header` of `Packet`s of type `FloodRequest` will be ignored (as the Packet is sent to all neighbors except the one from which it was received).
-- The `routing_header` of `Packet`s of type `FloodResponse`, on the other hand, determines the packet's path, and is creared from the `path_trace` of the `FloodRequest` from which is generated.
+- Note that the `routing_header` of `Packet`s of type `FloodRequest` can be created as each groups prefer, since it shouldn't impact the behavior of drones in any way.
+- The `routing_header` of `Packet`s of type `FloodResponse`, on the other hand, determines the packet's path, and is creared from the `path_trace` of the `FloodRequest` from which is generated (note that the initiator_id may or may not be already included).
 
 ### **Recording Topology Information**
 
@@ -324,6 +327,7 @@ Once that the client or server has received all fragments (that is, `fragment_in
 
 # Drone Protocol
 
+## Normal packet handling (excluding FloodRequest)
 When a drone receives a packet, it **must** perform the following steps:
 
 1. **Step 1**: Check if `hops[hop_index]` matches the drone's own `NodeId`.
@@ -333,34 +337,38 @@ When a drone receives a packet, it **must** perform the following steps:
 2. **Step 2**: Increment `hop_index` by **1**.
 
 3. **Step 3**: Determine if the drone is the final destination:
-	- **If `hop_index` equals the length of `hops`**, the drone is the final destination send a Nack with `DestinationIsDrone` and terminate processing.
-	- **If not**, proceed to Step 4.
+	- **If `hop_index` equals the length of `hops`**, the drone is the final destination proceed to handle a error `DestinationIsDrone` and terminate processing.
 
 4. **Step 4**: Identify the next hop using `hops[hop_index]`, let's call it `next_hop`.
-	- **If `next_hop` is not a neighbor** of the drone, send a Nack with `ErrorInRouting` (including the problematic `NodeId` of `next_hop`) and terminate processing.
-	- **If `next_hop` is a neighbor**, proceed to Step 5.
+	- **If `next_hop` is not a neighbor** of the drone, proceed to handle a error `ErrorInRouting` (including the problematic `NodeId` of `next_hop`) and terminate processing.
 
 5. **Step 5**: Proceed based on the packet type:
-
-   - **Flood Messages**: If the packet is flood-related, follow the rules specified in the **Network Discovery Protocol** section.
-
    - **`MsgFragment`**:
 
-      a. **Check for Packet Drop**:
-      - Determine whether to drop the packet based on the drone's **Packet Drop Rate (PDR)**.
+      a. **Check for dropping based on PDR**: Determine whether to drop the packet based on the drone's Packet Drop Rate (PDR).
 
-      b. **If the packet is to be dropped**:
-      - Send back a Nack with type `Dropped`. The Nack should have a Source Routing Header containing the reversed path from the current drone back to the sender.
-      - Terminate processing.
-
-      c. **If the packet is not to be dropped**:
-      - Send the packet to `next_hop` using the appropriate channel.
+      b. **If the packet is to be dropped**: Proceed to handle a error `Dropped`.
     
+   - **other packet types**: do nothing
+  
+6. **Step 6**: Send the packet to `next_hop` using the appropriate channel.
 
-6. If in any of the cases in which we found an error, the Packet was an Ack, Nack or FloodResponse, it'll be sent back to the destination through the Simulation Controller.
+### In the case the drone that is handling is in crash state
+Only execute **Step 1**. Then proceed to handle an error of type `ErrorInRouting`. 
 
+**NOTE**: because the index of `SourceRoutingHeader` was not increased (skipping step 2) the error should be sent as if the drone sending this error is the previous node. So when handling it (in the chapter "In case of error") it should be sent with a **`hop_index` of 0 instead of the normal 1**.
 
-### Step-by-Step Example
+### In case of error found (Nack created)
+1. **If the original packet is of type `MsgPacket`**
+- The Nack should have a Source Routing Header containing the **reversed path from the current drone (included) back to the sender (included)**.
+
+2. **Else** the packets cannot be dropped so instead of sending that error back, the packet will be sent to the destination through the Simulation Controller.
+- **In the case of `DestinationIsDrone`** the packet is simply dropped to avoid passing back and forth the packet between Simulation Controller and that drone.
+
+## Handling of FloodRequest
+When a drone receive a **Flood Messages**, the `routing_header` of this packet will be ignored, and the drone will proceed to process it as stated in the **Network Discovery Protocol** section.
+
+## Step-by-Step Example
 
 Consider the following simplified network topology:
 
