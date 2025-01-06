@@ -53,7 +53,7 @@ impl FloodRequest {
                 .rev()
                 .collect(),
         );
-        if source_routing.is_empty() || source_routing.destination() != Some(self.initiator_id) {
+        if source_routing.destination() != Some(self.initiator_id) {
             source_routing.append_hop(self.initiator_id);
         }
         Packet::new_flood_response(
