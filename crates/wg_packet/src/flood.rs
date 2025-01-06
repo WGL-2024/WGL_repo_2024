@@ -48,19 +48,13 @@ impl FloodRequest {
         let mut source_routing = SourceRoutingHeader::initialize(
             self.path_trace
                 .iter()
-                .cloned()
                 .map(|(id, _)| id)
+                .cloned()
                 .rev()
                 .collect(),
         );
-        match source_routing.destination() {
-            Some(destination) if destination != self.initiator_id => {
-                source_routing.append_hop(self.initiator_id);
-            }
-            None => {
-                source_routing.append_hop(self.initiator_id);
-            }
-            _ => {}
+        if source_routing.is_empty() || source_routing.destination() != Some(self.initiator_id) {
+            source_routing.append_hop(self.initiator_id);
         }
         Packet::new_flood_response(
             source_routing,
