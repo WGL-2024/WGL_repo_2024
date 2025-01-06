@@ -213,8 +213,8 @@ struct FloodResponse {
 
 #### Notes:
 - For the discovery protocol, `Packet`s of type `FloodRequest` and `FloodResponse` will be sent.
-- The `routing_header` of `Packet`s of type `FloodRequest` will be ignored (as the Packet is sent to all neighbors except the one from which it was received).
-- Note that the `routing_header` of `Packet`s of type `FloodRequest` can be created as each groups prefer, since it shouldn't impact the behavior of drones in any way.
+- The `routing_header` of `Packet`s of type `FloodRequest` **will be ignored** (as the Packet is sent to all neighbors except the one from which it was received).
+- Note that the `routing_header` of `Packet`s of type `FloodRequest` can be created as each group prefers, since it doesn't impact the behavior of drones.
 - The `routing_header` of `Packet`s of type `FloodResponse`, on the other hand, determines the packet's path, and is creared from the `path_trace` of the `FloodRequest` from which is generated (note that the initiator_id may or may not be already included).
 
 ### **Recording Topology Information**
