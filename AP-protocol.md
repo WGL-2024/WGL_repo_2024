@@ -254,6 +254,7 @@ If an error occurs, then a `Nack` is sent.
 The NackTypes are described in the Drone Protocol section.
 
 When a `Nack` is sent back the Source Routing Header contains the path from the current node to the src_id, which can be obtained by reversing the list of hops contained in the Source Routing Header of the problematic Packet.
+
 **Note**: The packet will contains only the path from the current node onwards, "cutting out" the rest of the original path.
 
 This Packet cannot be dropped by drones due to Packet Drop Rate.
